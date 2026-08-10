@@ -1,0 +1,45 @@
+[package]
+name = "tripwire-seed"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Offline BIP39 tripwire wallet planner and passphrase generator"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/metaforismo/tripwire-seed"
+readme = "README.md"
+keywords = ["bitcoin", "bip39", "airgap", "passphrase", "wallet"]
+categories = ["command-line-utilities", "cryptography"]
+publish = false
+
+[dependencies]
+bip39 = { version = "2.2.2", features = ["zeroize"] }
+bitcoin = { version = "0.32.102", default-features = false, features = ["std"] }
+clap = { version = "4.6.6", features = ["derive"] }
+getrandom = "0.4.3"
+qrcode = { version = "0.14.1", default-features = false }
+rpassword = "7.5.4"
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.151"
+thiserror = "2.0.20"
+unicode-normalization = "0.1.25"
+zeroize = "1.9.0"
+
+[dev-dependencies]
+tempfile = "3.26.0"
+
+[profile.release]
+codegen-units = 1
+lto = "thin"
+panic = "abort"
+strip = "symbols"
+
+[lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+
+[lints.clippy]
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"

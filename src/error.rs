@@ -1,0 +1,84 @@
+//! Error types shared by the library and CLI.
+
+use std::path::PathBuf;
+
+/// Result alias for `tripwire-seed` operations.
+pub type Result<T> = std::result::Result<T, Error>;
+
+/// Errors that can be returned without exposing secret material.
+#[derive(Debug, thiserror::Error)]
+pub enum Error {
+    /// The operating system random source failed.
+    #[error("the operating system random source failed")]
+    Random(#[from] getrandom::Error),
+
+    /// A BIP39 mnemonic was invalid.
+    #[error("invalid BIP39 mnemonic: {0}")]
+    Bip39(#[from] bip39::Error),
+
+    /// BIP32 key derivation failed.
+    #[error("BIP32 derivation failed: {0}")]
+    Bip32(#[from] bitcoin::bip32::Error),
+
+    /// A derivation path could not be parsed.
+    #[error("invalid derivation path: {0}")]
+    DerivationPath(String),
+
+    /// Serialization failed.
+    #[error("serialization failed: {0}")]
+    Serialization(#[from] serde_json::Error),
+
+    /// QR generation failed.
+    #[error("SeedQR generation failed: {0}")]
+    Qr(#[from] qrcode::types::QrError),
+
+    /// An I/O operation failed.
+    #[error("I/O error: {0}")]
+    Io(#[from] std::io::Error),
+
+    /// The passphrase word count was outside the supported range.
+    #[error("passphrase word count must be between {min} and {max}; got {actual}")]
+    PassphraseWordCount {
+        /// Minimum accepted value.
+        min: usize,
+        /// Maximum accepted value.
+        max: usize,
+        /// Supplied value.
+        actual: usize,
+    },
+
+    /// Dice input contained an invalid character.
+    #[error("dice input may contain only digits 1 through 6 and whitespace")]
+    InvalidDice,
+
+    /// More accepted dice groups are required.
+    #[error(
+        "not enough accepted dice groups: {accepted}/{required} words selected; add more rolls"
+    )]
+    InsufficientDice {
+        /// Number of accepted groups.
+        accepted: usize,
+        /// Number required.
+        required: usize,
+    },
+
+    /// The output path already exists.
+    #[error("refusing to overwrite existing path: {0}")]
+    OutputExists(PathBuf),
+
+    /// A secret export is unavailable on this platform.
+    #[error("plaintext secret export is unsupported on this platform in version 0.1")]
+    SecretExportUnsupported,
+
+    /// A CLI operation required an interactive terminal.
+    #[error("this operation requires an interactive terminal")]
+    InteractiveTerminalRequired,
+
+    /// The operator did not enter the exact confirmation phrase.
+    #[error("confirmation did not match; no secret was displayed or written")]
+    ConfirmationFailed,
+
+    /// A generated backup was not re-entered exactly.
+    #[error("backup verification failed; mnemonic and passphrase must be copied exactly")]
+    BackupVerificationFailed,
+}
