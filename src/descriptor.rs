@@ -18,9 +18,17 @@ const GENERATOR: [u64; 5] = [
 ///
 /// # Errors
 ///
-/// Returns [`Error::InvalidDescriptorCharacter`] when the descriptor contains
-/// a character outside BIP380's checksum input character set.
+/// Returns [`Error::DescriptorAlreadyContainsChecksum`] when the body already
+/// contains `#`, or [`Error::InvalidDescriptorCharacter`] when it contains a
+/// character outside BIP380's checksum input character set.
 pub fn descriptor_checksum(descriptor: &str) -> Result<String> {
+    if descriptor.contains('#') {
+        return Err(Error::DescriptorAlreadyContainsChecksum);
+    }
+    descriptor_checksum_unchecked(descriptor)
+}
+
+fn descriptor_checksum_unchecked(descriptor: &str) -> Result<String> {
     let mut checksum = 1_u64;
     let mut group = 0_u64;
     let mut group_count = 0_u8;
@@ -68,9 +76,6 @@ pub fn descriptor_checksum(descriptor: &str) -> Result<String> {
 /// contains `#`, or [`Error::InvalidDescriptorCharacter`] when it contains a
 /// character outside BIP380's checksum input character set.
 pub fn with_checksum(descriptor: &str) -> Result<String> {
-    if descriptor.contains('#') {
-        return Err(Error::DescriptorAlreadyContainsChecksum);
-    }
     let checksum = descriptor_checksum(descriptor)?;
     let mut output = String::with_capacity(descriptor.len() + 9);
     output.push_str(descriptor);
@@ -120,6 +125,10 @@ mod tests {
             with_checksum("raw(deadbeef)#89f8spxm"),
             Err(Error::DescriptorAlreadyContainsChecksum)
         ));
+        assert!(matches!(
+            descriptor_checksum("raw(deadbeef)#89f8spxm"),
+            Err(Error::DescriptorAlreadyContainsChecksum)
+        ));
     }
 
     #[test]
@@ -134,7 +143,7 @@ mod tests {
     #[test]
     fn covers_the_complete_bip380_input_charset() {
         assert_eq!(
-            descriptor_checksum(INPUT_CHARSET)
+            descriptor_checksum_unchecked(INPUT_CHARSET)
                 .unwrap_or_else(|error| unreachable!("BIP380 charset is encodable: {error}")),
             "fzuaxexw"
         );
