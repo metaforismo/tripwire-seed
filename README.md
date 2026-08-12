@@ -25,6 +25,8 @@ sponsored by Ashigaru, Sparrow Wallet, COLDCARD, or their maintainers.
   construction entropy.
 - Derives BIP84 account metadata for the base/decoy wallet (empty passphrase)
   and the protected wallet (non-empty passphrase).
+- Emits BIP380-checksummed receive and change descriptors to detect transcription
+  and copy/paste errors during watch-only import.
 - Compares the complete account xpubs locally; it does not call a server or
   pretend to perform a global collision search.
 - Exports watch-only JSON by default, SeedQR only after confirmation, and
@@ -144,7 +146,7 @@ cargo test --all-targets --locked
 RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --locked
 ```
 
-The test suite includes the official BIP84 first-address vector, dice rejection
+The test suite includes official BIP39, BIP84, and BIP380 vectors, dice rejection
 sampling, SeedQR encoding, redaction, no-overwrite behavior, Unix `0600` secret
 permissions, and the non-interactive CLI boundary.
 

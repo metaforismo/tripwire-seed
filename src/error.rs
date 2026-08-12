@@ -24,6 +24,19 @@ pub enum Error {
     #[error("invalid derivation path: {0}")]
     DerivationPath(String),
 
+    /// An output descriptor used a character outside the BIP380 checksum set.
+    #[error("invalid BIP380 descriptor character {character:?} at byte position {position}")]
+    InvalidDescriptorCharacter {
+        /// Zero-based byte position in the descriptor.
+        position: usize,
+        /// Unsupported character.
+        character: char,
+    },
+
+    /// A descriptor body already contained a checksum separator.
+    #[error("descriptor body already contains a checksum separator")]
+    DescriptorAlreadyContainsChecksum,
+
     /// Serialization failed.
     #[error("serialization failed: {0}")]
     Serialization(#[from] serde_json::Error),

@@ -13,8 +13,8 @@ application-specific account policy.
 
 The watch-only JSON is a `tripwire-seed` interchange file, not a vendor-native
 wallet file. It contains the exact public values needed for manual import and
-comparison, but Sparrow, COLDCARD, and Ashigaru are not expected to open that
-JSON directly.
+comparison, including BIP380-checksummed receive/change descriptors, but
+Sparrow, COLDCARD, and Ashigaru are not expected to open that JSON directly.
 
 ## Sparrow Wallet
 

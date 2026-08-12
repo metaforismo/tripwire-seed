@@ -288,6 +288,8 @@ fn print_summary(summary: &TripwireSummary) {
         println!("  master fingerprint: {}", wallet.master_fingerprint);
         println!("  derivation: {}", wallet.account_derivation);
         println!("  account xpub: {}", wallet.account_xpub);
+        println!("  receive descriptor: {}", wallet.receive_descriptor);
+        println!("  change descriptor: {}", wallet.change_descriptor);
         println!("  first receive address: {}", wallet.first_receive_address);
     }
     println!(

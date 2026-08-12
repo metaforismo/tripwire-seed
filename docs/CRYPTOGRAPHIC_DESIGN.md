@@ -11,6 +11,7 @@ Primary specifications:
 - [BIP39](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki)
 - [BIP32](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki)
 - [BIP84](https://github.com/bitcoin/bips/blob/master/bip-0084.mediawiki)
+- [BIP380](https://github.com/bitcoin/bips/blob/master/bip-0380.mediawiki)
 
 No custom key derivation, brainwallet transform, or wallet-specific private
 format is used.
@@ -79,9 +80,10 @@ receive:  m/84'/coin_type'/0'/0/0
 change:   m/84'/coin_type'/0'/1/*
 ```
 
-It emits the master fingerprint, account xpub, descriptor body, and first
-receive address. The descriptors are intentionally labelled as bodies without
-a checksum. The account derivation and xpub are sufficient for manual
+It emits the master fingerprint, account xpub, BIP380-checksummed receive and
+change descriptors, and first receive address. The checksum detects descriptor
+transcription and copy/paste errors; it does not authenticate the descriptor or
+hide the xpub. The account derivation and xpub remain available for manual
 watch-only import in compatible software.
 
 The collision check compares the complete derived account xpubs for the decoy

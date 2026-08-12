@@ -48,6 +48,8 @@ Security invariants:
 - Construction entropy is claimed only for the implemented uniform generators.
 - Dice selection is unbiased when rolls are independent and fair.
 - Decoy/protected equality is checked using full BIP84 account xpubs.
+- Exported receive and change descriptors include BIP380 checksums and refuse a
+  second checksum suffix.
 
 Assumptions:
 
@@ -92,8 +94,10 @@ unknown to an attacker.
 
 A typo creates another valid wallet and can cause permanent loss. The CLI
 requires backup re-entry after generation, emits fingerprints and first
-addresses, and tests the official BIP84 vector. Wallet-specific account policies
-can still differ; users must complete recovery drills.
+addresses, emits BIP380-checksummed descriptors, and tests official BIP84 and
+BIP380 vectors. Descriptor checksums detect transcription errors but do not
+authenticate the xpub or wallet policy. Wallet-specific account policies can
+still differ; users must complete recovery drills.
 
 ### Exports and filesystem
 
