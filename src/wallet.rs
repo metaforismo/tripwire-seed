@@ -11,7 +11,7 @@ use bitcoin::{
 use serde::Serialize;
 use zeroize::Zeroizing;
 
-use crate::{Error, Result};
+use crate::{Error, Result, descriptor::with_checksum};
 
 /// Network presets supported by the CLI.
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Serialize)]
@@ -57,9 +57,9 @@ pub struct WalletPublicInfo {
     pub account_derivation: String,
     /// Account-level extended public key.
     pub account_xpub: String,
-    /// Receive descriptor body. A checksum is intentionally not claimed.
+    /// Checksummed BIP380 receive descriptor.
     pub receive_descriptor: String,
-    /// Change descriptor body. A checksum is intentionally not claimed.
+    /// Checksummed BIP380 change descriptor.
     pub change_descriptor: String,
     /// First native `SegWit` receiving address.
     pub first_receive_address: String,
@@ -144,14 +144,16 @@ fn derive_wallet(
         .trim_start_matches("m/")
         .replace('\'', "h");
     let xpub = account_public.to_string();
+    let receive_descriptor = with_checksum(&format!("wpkh([{fingerprint}/{origin}]{xpub}/0/*)"))?;
+    let change_descriptor = with_checksum(&format!("wpkh([{fingerprint}/{origin}]{xpub}/1/*)"))?;
 
     Ok(WalletPublicInfo {
         role: role.to_owned(),
         master_fingerprint: fingerprint.to_string(),
         account_derivation,
         account_xpub: xpub.clone(),
-        receive_descriptor: format!("wpkh([{fingerprint}/{origin}]{xpub}/0/*)"),
-        change_descriptor: format!("wpkh([{fingerprint}/{origin}]{xpub}/1/*)"),
+        receive_descriptor,
+        change_descriptor,
         first_receive_address: address.to_string(),
     })
 }
@@ -176,6 +178,14 @@ mod tests {
             "bc1qcr8te4kr609gcawutmrza0j4xv80jy8z306fyu"
         );
         assert!(!summary.collision_check.same_account_xpub);
+        assert_eq!(
+            summary.decoy.receive_descriptor,
+            "wpkh([73c5da0a/84h/0h/0h]xpub6CatWdiZiodmUeTDp8LT5or8nmbKNcuyvz7WyksVFkKB4RHwCD3XyuvPEbvqAQY3rAPshWcMLoP2fMFMKHPJ4ZeZXYVUhLv1VMrjPC7PW6V/0/*)#afwvtk2s"
+        );
+        assert_eq!(
+            summary.decoy.change_descriptor,
+            "wpkh([73c5da0a/84h/0h/0h]xpub6CatWdiZiodmUeTDp8LT5or8nmbKNcuyvz7WyksVFkKB4RHwCD3XyuvPEbvqAQY3rAPshWcMLoP2fMFMKHPJ4ZeZXYVUhLv1VMrjPC7PW6V/1/*)#vatdkr6g"
+        );
     }
 
     #[test]

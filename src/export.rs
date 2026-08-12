@@ -171,6 +171,22 @@ mod tests {
         assert!(!contents.contains("correct protected value"));
         assert!(!contents.contains("xprv"));
         assert!(contents.contains("account_xpub"));
+        for descriptor in [
+            &summary.decoy.receive_descriptor,
+            &summary.decoy.change_descriptor,
+            &summary.protected.receive_descriptor,
+            &summary.protected.change_descriptor,
+        ] {
+            let (body, checksum) = descriptor
+                .rsplit_once('#')
+                .unwrap_or_else(|| unreachable!("generated descriptor has a checksum"));
+            assert_eq!(checksum.len(), 8);
+            assert_eq!(
+                crate::descriptor::descriptor_checksum(body)
+                    .unwrap_or_else(|error| unreachable!("generated descriptor is valid: {error}")),
+                checksum
+            );
+        }
     }
 
     #[cfg(unix)]

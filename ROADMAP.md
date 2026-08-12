@@ -12,7 +12,6 @@
 
 ## Later candidates
 
-- Checksummed output descriptors.
 - Deterministic, independently testable entropy transcripts that reveal no
   secret material.
 - Optional multi-decoy planning without persistent passphrase storage.
