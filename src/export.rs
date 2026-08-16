@@ -19,13 +19,16 @@ use crate::{
 /// Maximum accepted size of a watch-only reference file.
 pub const MAX_WATCH_ONLY_BYTES: usize = 64 * 1024;
 
-/// Write watch-only metadata as pretty JSON, refusing to overwrite a path.
+/// Write semantically valid watch-only metadata as pretty JSON, refusing to
+/// overwrite a path.
 ///
 /// # Errors
 ///
-/// Returns an error when serialization fails, the path already exists, or the
-/// file cannot be created, written, or synchronized.
+/// Returns an error when the public fields are inconsistent, serialization
+/// fails, the path already exists, or the file cannot be created, written, or
+/// synchronized.
 pub fn write_watch_only(path: &Path, summary: &TripwireSummary) -> Result<()> {
+    validate_tripwire_summary(summary)?;
     let encoded = serde_json::to_vec_pretty(summary)?;
     let mut file = create_new_file(path, false)?;
     file.write_all(&encoded)?;
@@ -322,6 +325,21 @@ mod tests {
             read_watch_only(&output),
             Err(Error::InvalidWatchOnlyReference)
         ));
+    }
+
+    #[test]
+    fn inconsistent_watch_only_export_is_not_created() {
+        let mut inconsistent = summary();
+        inconsistent.collision_check.same_account_xpub =
+            !inconsistent.collision_check.same_account_xpub;
+        let directory = tempfile::tempdir()
+            .unwrap_or_else(|error| unreachable!("temporary directory: {error}"));
+        let output = directory.path().join("inconsistent.json");
+        assert!(matches!(
+            write_watch_only(&output, &inconsistent),
+            Err(Error::InvalidWatchOnlyReference)
+        ));
+        assert!(!output.exists());
     }
 
     #[cfg(unix)]
