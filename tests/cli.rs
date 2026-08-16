@@ -59,8 +59,7 @@ fn fingerprint_command_is_non_interactive_and_bounded_by_file_loader() {
 
 #[test]
 fn fingerprint_command_matches_the_library_without_a_terminal() {
-    const MNEMONIC: &str =
-        "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
+    const MNEMONIC: &str = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
     let mnemonic = Mnemonic::parse_in_normalized(Language::English, MNEMONIC)
         .unwrap_or_else(|error| unreachable!("official vector: {error}"));
     let summary = derive_tripwire_summary(&mnemonic, "protected", WalletNetwork::Signet)
