@@ -66,8 +66,8 @@ fn fingerprint_command_matches_the_library_without_a_terminal() {
         .unwrap_or_else(|error| unreachable!("valid derivation: {error}"));
     let expected = watch_only_fingerprint(&summary)
         .unwrap_or_else(|error| unreachable!("summary serializes: {error}"));
-    let directory = tempfile::tempdir()
-        .unwrap_or_else(|error| unreachable!("temporary directory: {error}"));
+    let directory =
+        tempfile::tempdir().unwrap_or_else(|error| unreachable!("temporary directory: {error}"));
     let reference = directory.path().join("watch-only.json");
     write_watch_only(&reference, &summary)
         .unwrap_or_else(|error| unreachable!("reference writes: {error}"));
