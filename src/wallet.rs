@@ -5,7 +5,7 @@ use std::str::FromStr;
 use bip39::Mnemonic;
 use bitcoin::{
     Address, CompressedPublicKey, Network,
-    bip32::{DerivationPath, Xpriv, Xpub},
+    bip32::{ChildNumber, DerivationPath, Xpriv, Xpub},
     secp256k1::Secp256k1,
 };
 use serde::{Deserialize, Serialize};
@@ -222,6 +222,15 @@ fn validate_wallet_public_info(
 
     let account_public =
         Xpub::from_str(&wallet.account_xpub).map_err(|_| Error::InvalidWatchOnlyReference)?;
+    if account_public.depth != 3
+        || !matches!(
+            account_public.child_number,
+            ChildNumber::Hardened { index: 0 }
+        )
+    {
+        return Err(Error::InvalidWatchOnlyReference);
+    }
+
     let secp = Secp256k1::verification_only();
     let first_receive_path =
         DerivationPath::from_str("m/0/0").map_err(|_| Error::InvalidWatchOnlyReference)?;
@@ -283,6 +292,24 @@ mod tests {
             .unwrap_or_else(|error| unreachable!("official vector: {error}"));
         derive_tripwire_summary(&mnemonic, "test-passphrase", WalletNetwork::Bitcoin)
             .unwrap_or_else(|error| unreachable!("valid derivation: {error}"))
+    }
+
+    fn replace_decoy_xpub(summary: &mut TripwireSummary, account_public: Xpub) {
+        let account_xpub = account_public.to_string();
+        let origin = descriptor_origin(&summary.decoy.account_derivation);
+        summary.decoy.account_xpub = account_xpub.clone();
+        summary.decoy.receive_descriptor = with_checksum(&format!(
+            "wpkh([{}/{origin}]{account_xpub}/0/*)",
+            summary.decoy.master_fingerprint
+        ))
+        .unwrap_or_else(|error| unreachable!("test descriptor is valid: {error}"));
+        summary.decoy.change_descriptor = with_checksum(&format!(
+            "wpkh([{}/{origin}]{account_xpub}/1/*)",
+            summary.decoy.master_fingerprint
+        ))
+        .unwrap_or_else(|error| unreachable!("test descriptor is valid: {error}"));
+        summary.collision_check.same_account_xpub =
+            summary.decoy.account_xpub == summary.protected.account_xpub;
     }
 
     #[test]
@@ -359,6 +386,39 @@ mod tests {
             !wrong_collision.collision_check.same_account_xpub;
         assert!(matches!(
             validate_tripwire_summary(&wrong_collision),
+            Err(Error::InvalidWatchOnlyReference)
+        ));
+    }
+
+    #[test]
+    fn semantic_validation_rejects_non_account_extended_keys() {
+        let original = summary();
+        let account_public = Xpub::from_str(&original.decoy.account_xpub)
+            .unwrap_or_else(|error| unreachable!("generated account xpub parses: {error}"));
+
+        let mut wrong_depth = original.clone();
+        replace_decoy_xpub(
+            &mut wrong_depth,
+            Xpub {
+                depth: 2,
+                ..account_public
+            },
+        );
+        assert!(matches!(
+            validate_tripwire_summary(&wrong_depth),
+            Err(Error::InvalidWatchOnlyReference)
+        ));
+
+        let mut wrong_child = original;
+        replace_decoy_xpub(
+            &mut wrong_child,
+            Xpub {
+                child_number: ChildNumber::Hardened { index: 1 },
+                ..account_public
+            },
+        );
+        assert!(matches!(
+            validate_tripwire_summary(&wrong_child),
             Err(Error::InvalidWatchOnlyReference)
         ));
     }
