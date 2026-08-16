@@ -10,7 +10,10 @@ use clap::{Parser, Subcommand, ValueEnum};
 use tripwire_seed::{
     DEFAULT_PASSPHRASE_WORDS, Error, Result,
     audit::{audit_passphrase, audit_passphrase_with_entropy},
-    export::{render_seedqr, write_plaintext_secret_bundle, write_watch_only},
+    export::{
+        read_watch_only, render_seedqr, verify_watch_only, write_plaintext_secret_bundle,
+        write_watch_only,
+    },
     passphrase::{DiceAccumulator, GeneratedPassphrase, generate_system},
     wallet::{TripwireSummary, WalletNetwork, derive_tripwire_summary},
 };
@@ -29,6 +32,8 @@ enum Commands {
     Create(CreateArgs),
     /// Inspect an existing mnemonic/passphrase pair without revealing it.
     Inspect(InspectArgs),
+    /// Verify a recovery drill against a prior watch-only export.
+    Verify(VerifyArgs),
     /// Audit a passphrase conservatively without deriving a wallet.
     AuditPassphrase,
 }
@@ -79,6 +84,13 @@ struct InspectArgs {
     dangerous_secret_out: Option<PathBuf>,
 }
 
+#[derive(Debug, clap::Args)]
+struct VerifyArgs {
+    /// Version 1 watch-only export produced before the recovery drill.
+    #[arg(long, value_name = "PATH")]
+    watch_only: PathBuf,
+}
+
 #[derive(Debug, Clone, Copy, Eq, PartialEq, ValueEnum)]
 enum PassphraseSource {
     System,
@@ -114,6 +126,7 @@ fn run() -> Result<()> {
     match cli.command {
         Commands::Create(arguments) => create(arguments),
         Commands::Inspect(arguments) => inspect(arguments),
+        Commands::Verify(arguments) => verify(arguments),
         Commands::AuditPassphrase => audit_interactive(),
     }
 }
@@ -198,6 +211,25 @@ fn inspect(arguments: InspectArgs) -> Result<()> {
         arguments.show_seedqr,
         arguments.dangerous_secret_out,
     )
+}
+
+fn verify(arguments: VerifyArgs) -> Result<()> {
+    require_interactive_terminal()?;
+    let expected = read_watch_only(&arguments.watch_only)?;
+    let mut mnemonic_text = Zeroizing::new(rpassword::prompt_password(
+        "BIP39 mnemonic (input hidden): ",
+    )?);
+    let mnemonic = Mnemonic::parse_in_normalized(Language::English, mnemonic_text.trim())?;
+    mnemonic_text.zeroize();
+    let passphrase = Zeroizing::new(rpassword::prompt_password(
+        "BIP39 passphrase (input hidden): ",
+    )?);
+    let actual = derive_tripwire_summary(&mnemonic, passphrase.as_str(), expected.network)?;
+
+    verify_watch_only(&expected, &actual)?;
+    println!("Watch-only recovery verification: OK");
+    print_summary(&actual);
+    Ok(())
 }
 
 fn audit_interactive() -> Result<()> {
