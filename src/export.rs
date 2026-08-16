@@ -1,13 +1,23 @@
-//! Explicit export functions with no-overwrite defaults.
+//! Explicit export and verification functions with bounded, fail-closed defaults.
 
-use std::{fs::OpenOptions, io::Write, path::Path};
+use std::{
+    fs::{File, OpenOptions},
+    io::{Read, Write},
+    path::Path,
+};
 
 use bip39::Mnemonic;
 use qrcode::{QrCode, render::unicode};
 use serde::Serialize;
 use zeroize::Zeroizing;
 
-use crate::{Error, Result, wallet::TripwireSummary};
+use crate::{
+    Error, Result,
+    wallet::{ACCOUNT_STANDARD, TripwireSummary, WATCH_ONLY_SCHEMA},
+};
+
+/// Maximum accepted size of a watch-only reference file.
+pub const MAX_WATCH_ONLY_BYTES: usize = 64 * 1024;
 
 /// Write watch-only metadata as pretty JSON, refusing to overwrite a path.
 ///
@@ -22,6 +32,51 @@ pub fn write_watch_only(path: &Path, summary: &TripwireSummary) -> Result<()> {
     file.write_all(b"\n")?;
     file.sync_all()?;
     Ok(())
+}
+
+/// Read and validate one bounded version 1 watch-only reference.
+///
+/// Unknown fields, unsupported schemas, and account-policy changes fail closed.
+/// The file contains public wallet metadata, but its size is still bounded to
+/// prevent an attacker-controlled path from causing unbounded allocation.
+///
+/// # Errors
+///
+/// Returns an error when the file cannot be read, exceeds
+/// [`MAX_WATCH_ONLY_BYTES`], is not strict JSON for the supported schema, or
+/// represents a different account standard.
+pub fn read_watch_only(path: &Path) -> Result<TripwireSummary> {
+    let mut limited = File::open(path)?.take((MAX_WATCH_ONLY_BYTES + 1) as u64);
+    let mut encoded = Vec::new();
+    limited.read_to_end(&mut encoded)?;
+    if encoded.len() > MAX_WATCH_ONLY_BYTES {
+        return Err(Error::WatchOnlyTooLarge {
+            max: MAX_WATCH_ONLY_BYTES,
+        });
+    }
+
+    let summary: TripwireSummary = serde_json::from_slice(&encoded)?;
+    if summary.schema != WATCH_ONLY_SCHEMA || summary.account_standard != ACCOUNT_STANDARD {
+        return Err(Error::UnsupportedWatchOnlyFormat);
+    }
+    Ok(summary)
+}
+
+/// Require an exact match between a trusted reference and freshly derived data.
+///
+/// This compares the network, account policy, full account xpubs, descriptors,
+/// first addresses, and collision metadata. It does not authenticate the
+/// reference file or prove that an external wallet follows the same policy.
+///
+/// # Errors
+///
+/// Returns [`Error::WatchOnlyMismatch`] when any public field differs.
+pub fn verify_watch_only(expected: &TripwireSummary, actual: &TripwireSummary) -> Result<()> {
+    if expected == actual {
+        Ok(())
+    } else {
+        Err(Error::WatchOnlyMismatch)
+    }
 }
 
 /// Build the standard numeric `SeedQR` payload (four zero-padded digits per word).
@@ -134,6 +189,14 @@ mod tests {
     use crate::wallet::{WalletNetwork, derive_tripwire_summary};
 
     const MNEMONIC: &str = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
+    const PASSPHRASE: &str = "correct protected value";
+
+    fn summary() -> TripwireSummary {
+        let mnemonic = Mnemonic::parse_in_normalized(Language::English, MNEMONIC)
+            .unwrap_or_else(|error| unreachable!("official vector: {error}"));
+        derive_tripwire_summary(&mnemonic, PASSPHRASE, WalletNetwork::Bitcoin)
+            .unwrap_or_else(|error| unreachable!("valid derivation: {error}"))
+    }
 
     #[test]
     fn seedqr_payload_is_fixed_width() {
@@ -155,11 +218,7 @@ mod tests {
 
     #[test]
     fn watch_only_export_contains_no_secret_fields() {
-        let mnemonic = Mnemonic::parse_in_normalized(Language::English, MNEMONIC)
-            .unwrap_or_else(|error| unreachable!("official vector: {error}"));
-        let summary =
-            derive_tripwire_summary(&mnemonic, "correct protected value", WalletNetwork::Bitcoin)
-                .unwrap_or_else(|error| unreachable!("valid derivation: {error}"));
+        let summary = summary();
         let directory = tempfile::tempdir()
             .unwrap_or_else(|error| unreachable!("temporary directory: {error}"));
         let output = directory.path().join("watch-only.json");
@@ -168,7 +227,7 @@ mod tests {
         let contents = fs::read_to_string(output)
             .unwrap_or_else(|error| unreachable!("read succeeds: {error}"));
         assert!(!contents.contains(MNEMONIC));
-        assert!(!contents.contains("correct protected value"));
+        assert!(!contents.contains(PASSPHRASE));
         assert!(!contents.contains("xprv"));
         assert!(contents.contains("account_xpub"));
         for descriptor in [
@@ -187,6 +246,65 @@ mod tests {
                 checksum
             );
         }
+    }
+
+    #[test]
+    fn watch_only_reference_round_trips_and_matches_exactly() {
+        let expected = summary();
+        let directory = tempfile::tempdir()
+            .unwrap_or_else(|error| unreachable!("temporary directory: {error}"));
+        let output = directory.path().join("watch-only.json");
+        write_watch_only(&output, &expected)
+            .unwrap_or_else(|error| unreachable!("write succeeds: {error}"));
+
+        let decoded = read_watch_only(&output)
+            .unwrap_or_else(|error| unreachable!("strict reference decodes: {error}"));
+        assert_eq!(decoded, expected);
+        verify_watch_only(&expected, &decoded)
+            .unwrap_or_else(|error| unreachable!("identical summaries match: {error}"));
+    }
+
+    #[test]
+    fn recovery_verification_rejects_any_public_mismatch() {
+        let expected = summary();
+        let mut actual = expected.clone();
+        actual.protected.first_receive_address.push('x');
+        assert!(matches!(
+            verify_watch_only(&expected, &actual),
+            Err(Error::WatchOnlyMismatch)
+        ));
+    }
+
+    #[test]
+    fn watch_only_input_is_bounded_before_json_decoding() {
+        let directory = tempfile::tempdir()
+            .unwrap_or_else(|error| unreachable!("temporary directory: {error}"));
+        let output = directory.path().join("oversized.json");
+        fs::write(&output, vec![b' '; MAX_WATCH_ONLY_BYTES + 1])
+            .unwrap_or_else(|error| unreachable!("test fixture writes: {error}"));
+        assert!(matches!(
+            read_watch_only(&output),
+            Err(Error::WatchOnlyTooLarge {
+                max: MAX_WATCH_ONLY_BYTES
+            })
+        ));
+    }
+
+    #[test]
+    fn unsupported_watch_only_schema_fails_closed() {
+        let mut unsupported = summary();
+        unsupported.schema = "tripwire-seed/watch-only/v2".to_owned();
+        let directory = tempfile::tempdir()
+            .unwrap_or_else(|error| unreachable!("temporary directory: {error}"));
+        let output = directory.path().join("unsupported.json");
+        let encoded = serde_json::to_vec_pretty(&unsupported)
+            .unwrap_or_else(|error| unreachable!("fixture serializes: {error}"));
+        fs::write(&output, encoded)
+            .unwrap_or_else(|error| unreachable!("test fixture writes: {error}"));
+        assert!(matches!(
+            read_watch_only(&output),
+            Err(Error::UnsupportedWatchOnlyFormat)
+        ));
     }
 
     #[cfg(unix)]
