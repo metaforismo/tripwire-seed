@@ -29,6 +29,8 @@ sponsored by Ashigaru, Sparrow Wallet, COLDCARD, or their maintainers.
   and copy/paste errors during watch-only import.
 - Verifies an offline recovery drill by re-deriving and exactly comparing a
   bounded, strict version 1 watch-only reference.
+- Reconstructs addresses and descriptors from each account xpub and rejects
+  internally inconsistent roles, derivation policy, or collision metadata.
 - Computes a domain-separated SHA-256 fingerprint that commits to every public
   field in a watch-only reference.
 - Compares the complete account xpubs locally; it does not call a server or
@@ -133,12 +135,25 @@ requires an exact match of the schema, account policy, full account xpubs,
 BIP380 descriptors, first addresses, and collision metadata. Input is limited
 to 64 KiB and unknown JSON fields fail closed.
 
+Before fingerprinting or requesting secrets, the loader also parses each account
+xpub, derives its first receive address, reconstructs both descriptors with
+BIP380 checksums, and recomputes the decoy/protected equality result. A mismatch
+in any of those relationships is rejected as an internally inconsistent
+reference.
+
 A fingerprint detects substitution only when the expected value was stored or
 communicated separately through a channel the attacker could not replace at the
 same time. Printing a fingerprint from an untrusted JSON file does not
 authenticate that file. The fingerprint is public financial metadata, not a
 password, signature, MAC, or proof that an external wallet follows the same
 policy.
+
+The master fingerprint sits above a hardened BIP84 account path and cannot be
+recovered or proven from an account xpub alone. The loader therefore validates
+its canonical form and its consistent use in the descriptors, but this is not
+proof that the fingerprint originated from the claimed master key. Provenance
+still depends on a trusted original export and, when substitution matters, an
+independently retained fingerprint.
 
 Audit a passphrase without deriving wallet data:
 
@@ -188,8 +203,9 @@ RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --locked
 
 The test suite includes official BIP39, BIP84, and BIP380 vectors, dice rejection
 sampling, SeedQR encoding, redaction, no-overwrite behavior, Unix `0600` secret
-permissions, strict and bounded watch-only recovery verification,
-domain-separated fingerprint regressions, and the non-interactive CLI boundary.
+permissions, strict and bounded watch-only recovery verification, semantic
+public-field consistency checks, domain-separated fingerprint regressions, and
+the non-interactive CLI boundary.
 
 Read the [cryptographic design](docs/CRYPTOGRAPHIC_DESIGN.md),
 [threat model](docs/THREAT_MODEL.md), [security policy](SECURITY.md), and
