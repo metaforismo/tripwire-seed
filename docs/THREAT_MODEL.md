@@ -36,10 +36,10 @@ existing mnemonic/passphrase values, confirmation phrases, watch-only reference
 paths, expected fingerprints, and output paths. Developer-controlled inputs
 include source changes, dependencies, CI workflows, and test vectors.
 Attacker-controlled inputs can include a malicious local path or filesystem
-race, a crafted or oversized watch-only reference, a substituted fingerprint,
-poisoned dependency or build environment, terminal capture, malware, a biased
-entropy source, deceptive wallet software, and crafted passphrase text supplied
-during an inspection workflow.
+race, a crafted, oversized, or internally inconsistent watch-only reference, a
+substituted fingerprint, poisoned dependency or build environment, terminal
+capture, malware, a biased entropy source, deceptive wallet software, and
+crafted passphrase text supplied during an inspection workflow.
 
 Security invariants:
 
@@ -59,7 +59,11 @@ Security invariants:
 - Exported receive and change descriptors include BIP380 checksums and refuse a
   second checksum suffix.
 - Watch-only references are bounded, decoded with a strict version 1 schema,
-  and compared exactly before a recovery drill is reported as successful.
+  checked for semantic consistency, and compared exactly before a recovery
+  drill is reported as successful.
+- Semantic validation parses each account xpub, reconstructs its first receive
+  address and both descriptors, checks fixed role/path policy, and recomputes
+  the account-xpub equality result.
 - A supplied watch-only fingerprint is validated and compared before any
   mnemonic or passphrase prompt is shown.
 
@@ -126,6 +130,18 @@ secrets to create a misleading success. References are decoded before secret
 input, limited to 64 KiB, reject unknown fields, require the exact version 1
 schema and account policy, and are compared in full.
 
+The loader also rejects public fields that contradict one another. It parses
+each account xpub, derives branch `0`, index `0`, reconstructs the receive and
+change descriptors with BIP380 checksums, checks the fixed role and BIP84 path,
+and recomputes the equality of the two account xpubs. This prevents a file from
+being accepted merely because each field is individually well-formed.
+
+The four-byte master fingerprint cannot be derived from an account xpub because
+the account sits below a hardened path. The loader can validate only its
+canonical representation and consistent use in the descriptors. It cannot prove
+that an attacker-chosen fingerprint and otherwise self-consistent public data
+originated from a claimed master key.
+
 The domain-separated SHA-256 fingerprint commits to compact serialization of
 every supported public field. The CLI can compare it before requesting secrets.
 This detects substitution only when the expected fingerprint came through an
@@ -171,6 +187,8 @@ perfect or substitute for reproducible independent builds and external audit.
   fund an unrecoverable wallet under documented steps.
 - Recovery verification reporting success when the full supported public wallet
   policy does not match the supplied reference.
+- Semantic validation accepting contradictory account xpub, descriptor, address,
+  role, derivation, or collision metadata.
 - Fingerprint verification reporting success for a different strict version 1
   watch-only reference.
 
