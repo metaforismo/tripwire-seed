@@ -29,6 +29,8 @@ sponsored by Ashigaru, Sparrow Wallet, COLDCARD, or their maintainers.
   and copy/paste errors during watch-only import.
 - Verifies an offline recovery drill by re-deriving and exactly comparing a
   bounded, strict version 1 watch-only reference.
+- Computes a domain-separated SHA-256 fingerprint that commits to every public
+  field in a watch-only reference.
 - Compares the complete account xpubs locally; it does not call a server or
   pretend to perform a global collision search.
 - Exports watch-only JSON by default, SeedQR only after confirmation, and
@@ -108,20 +110,35 @@ Inspect an existing pair without displaying its secrets:
 cargo run --release --locked -- inspect
 ```
 
+Print the canonical fingerprint of a watch-only reference without entering any
+secret:
+
+```console
+cargo run --release --locked -- fingerprint \
+  --watch-only wallet.tripwire-watch-only.json
+```
+
 Verify a recovery drill against a watch-only export created earlier:
 
 ```console
 cargo run --release --locked -- verify \
-  --watch-only wallet.tripwire-watch-only.json
+  --watch-only wallet.tripwire-watch-only.json \
+  --expected-fingerprint 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 ```
 
-The verification command validates the public reference before requesting
-secrets, derives on the network recorded in that reference, and requires an
-exact match of the schema, account policy, full account xpubs, BIP380
-descriptors, first addresses, and collision metadata. Input is limited to 64
-KiB and unknown JSON fields fail closed. This detects a wrong mnemonic,
-passphrase, network, or altered public reference; it does not authenticate the
-file or certify an external wallet implementation.
+The verification command validates the public reference and, when supplied,
+its independently retained fingerprint before requesting the mnemonic or
+passphrase. It then derives on the network recorded in that reference and
+requires an exact match of the schema, account policy, full account xpubs,
+BIP380 descriptors, first addresses, and collision metadata. Input is limited
+to 64 KiB and unknown JSON fields fail closed.
+
+A fingerprint detects substitution only when the expected value was stored or
+communicated separately through a channel the attacker could not replace at the
+same time. Printing a fingerprint from an untrusted JSON file does not
+authenticate that file. The fingerprint is public financial metadata, not a
+password, signature, MAC, or proof that an external wallet follows the same
+policy.
 
 Audit a passphrase without deriving wallet data:
 
@@ -140,6 +157,9 @@ them.
 # Public metadata: fingerprint, account xpub, descriptors, first addresses
 tripwire-seed create --watch-only-out wallet.tripwire-watch-only.json
 
+# Recompute the public reference fingerprint later
+tripwire-seed fingerprint --watch-only wallet.tripwire-watch-only.json
+
 # Machine-readable mnemonic on screen; requires a separate confirmation
 tripwire-seed create --show-seedqr
 
@@ -147,12 +167,13 @@ tripwire-seed create --show-seedqr
 tripwire-seed create --dangerous-secret-out backup.tripwire-secrets.json
 ```
 
-Watch-only files contain no spending secrets, but they reveal address
-relationships and should still be handled as private financial metadata. Files
-are created with no-overwrite semantics. Plaintext secret export is disabled on
-platforms where version 0.1 cannot establish owner-only permissions before
-creation. Secure deletion is not promised: SSDs, snapshots, backups, and
-copy-on-write filesystems can retain old data.
+After a watch-only export, the CLI prints its fingerprint so it can be retained
+separately. Watch-only files and their fingerprints contain no spending secrets,
+but they reveal address relationships and should still be handled as private
+financial metadata. Files are created with no-overwrite semantics. Plaintext
+secret export is disabled on platforms where version 0.1 cannot establish
+owner-only permissions before creation. Secure deletion is not promised: SSDs,
+snapshots, backups, and copy-on-write filesystems can retain old data.
 
 See [wallet import guidance](docs/WALLET_IMPORTS.md) before moving funds.
 
@@ -167,8 +188,8 @@ RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --locked
 
 The test suite includes official BIP39, BIP84, and BIP380 vectors, dice rejection
 sampling, SeedQR encoding, redaction, no-overwrite behavior, Unix `0600` secret
-permissions, strict and bounded watch-only recovery verification, and the
-non-interactive CLI boundary.
+permissions, strict and bounded watch-only recovery verification,
+domain-separated fingerprint regressions, and the non-interactive CLI boundary.
 
 Read the [cryptographic design](docs/CRYPTOGRAPHIC_DESIGN.md),
 [threat model](docs/THREAT_MODEL.md), [security policy](SECURITY.md), and
