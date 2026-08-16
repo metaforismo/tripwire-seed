@@ -9,6 +9,7 @@ pub mod audit;
 pub mod descriptor;
 pub mod error;
 pub mod export;
+pub mod fingerprint;
 pub mod passphrase;
 pub mod wallet;
 
