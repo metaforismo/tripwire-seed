@@ -14,6 +14,7 @@ use tripwire_seed::{
         read_watch_only, render_seedqr, verify_watch_only, write_plaintext_secret_bundle,
         write_watch_only,
     },
+    fingerprint::{verify_watch_only_fingerprint, watch_only_fingerprint},
     passphrase::{DiceAccumulator, GeneratedPassphrase, generate_system},
     wallet::{TripwireSummary, WalletNetwork, derive_tripwire_summary},
 };
@@ -32,6 +33,8 @@ enum Commands {
     Create(CreateArgs),
     /// Inspect an existing mnemonic/passphrase pair without revealing it.
     Inspect(InspectArgs),
+    /// Print the canonical fingerprint of a watch-only reference.
+    Fingerprint(FingerprintArgs),
     /// Verify a recovery drill against a prior watch-only export.
     Verify(VerifyArgs),
     /// Audit a passphrase conservatively without deriving a wallet.
@@ -85,10 +88,21 @@ struct InspectArgs {
 }
 
 #[derive(Debug, clap::Args)]
+struct FingerprintArgs {
+    /// Version 1 watch-only export whose public fields will be fingerprinted.
+    #[arg(long, value_name = "PATH")]
+    watch_only: PathBuf,
+}
+
+#[derive(Debug, clap::Args)]
 struct VerifyArgs {
     /// Version 1 watch-only export produced before the recovery drill.
     #[arg(long, value_name = "PATH")]
     watch_only: PathBuf,
+
+    /// Independently retained SHA-256 fingerprint of the watch-only reference.
+    #[arg(long, value_name = "SHA256")]
+    expected_fingerprint: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, Eq, PartialEq, ValueEnum)]
@@ -126,6 +140,7 @@ fn run() -> Result<()> {
     match cli.command {
         Commands::Create(arguments) => create(arguments),
         Commands::Inspect(arguments) => inspect(arguments),
+        Commands::Fingerprint(arguments) => fingerprint(&arguments),
         Commands::Verify(arguments) => verify(&arguments),
         Commands::AuditPassphrase => audit_interactive(),
     }
@@ -213,9 +228,26 @@ fn inspect(arguments: InspectArgs) -> Result<()> {
     )
 }
 
+fn fingerprint(arguments: &FingerprintArgs) -> Result<()> {
+    let summary = read_watch_only(&arguments.watch_only)?;
+    println!("{}", watch_only_fingerprint(&summary)?);
+    Ok(())
+}
+
 fn verify(arguments: &VerifyArgs) -> Result<()> {
     require_interactive_terminal()?;
     let expected = read_watch_only(&arguments.watch_only)?;
+    let reference_fingerprint = watch_only_fingerprint(&expected)?;
+    if let Some(supplied) = &arguments.expected_fingerprint {
+        verify_watch_only_fingerprint(supplied, &expected)?;
+        println!("Watch-only reference fingerprint: OK");
+    } else {
+        println!("Watch-only reference fingerprint: {reference_fingerprint}");
+        println!(
+            "No independent fingerprint was supplied; reference authenticity was not established."
+        );
+    }
+
     let mut mnemonic_text = Zeroizing::new(rpassword::prompt_password(
         "BIP39 mnemonic (input hidden): ",
     )?);
@@ -291,6 +323,10 @@ fn process_exports(
     if let Some(path) = watch_only_out {
         write_watch_only(&path, summary)?;
         println!("Watch-only metadata written to {}", path.display());
+        println!("Watch-only fingerprint: {}", watch_only_fingerprint(summary)?);
+        println!(
+            "Store the fingerprint separately from the JSON if you want to detect later substitution."
+        );
     }
 
     if show_seedqr {
