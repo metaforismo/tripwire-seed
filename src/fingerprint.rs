@@ -4,8 +4,7 @@ use bitcoin::hashes::{Hash, sha256};
 
 use crate::{Error, Result, wallet::TripwireSummary};
 
-const WATCH_ONLY_FINGERPRINT_DOMAIN: &[u8] =
-    b"tripwire-seed/watch-only-fingerprint/v1\0";
+const WATCH_ONLY_FINGERPRINT_DOMAIN: &[u8] = b"tripwire-seed/watch-only-fingerprint/v1\0";
 const LOWER_HEX: &[u8; 16] = b"0123456789abcdef";
 
 /// Compute the canonical SHA-256 fingerprint for a watch-only summary.
@@ -66,8 +65,7 @@ mod tests {
     use super::*;
     use crate::wallet::{WalletNetwork, derive_tripwire_summary};
 
-    const MNEMONIC: &str =
-        "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
+    const MNEMONIC: &str = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
 
     fn summary() -> TripwireSummary {
         let mnemonic = Mnemonic::parse_in_normalized(Language::English, MNEMONIC)
