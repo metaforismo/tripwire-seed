@@ -15,6 +15,8 @@ All notable changes will be documented here. The format follows
 - Watch-only JSON, opt-in SeedQR, and gated Unix plaintext export.
 - BIP380 checksums on receive and change descriptors in terminal and watch-only
   JSON output.
+- Strict, bounded watch-only reference loading and exact offline recovery
+  verification.
 - BIP84 vectors, redaction, permissions, no-overwrite, and TTY boundary tests.
 - Security policy, threat model, cryptographic design, CI, dependency review,
   RustSec audit, cargo-deny, CodeQL, and Dependabot configuration.
