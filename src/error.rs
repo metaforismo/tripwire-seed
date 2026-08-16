@@ -90,6 +90,10 @@ pub enum Error {
     #[error("watch-only reference uses an unsupported schema or account standard")]
     UnsupportedWatchOnlyFormat,
 
+    /// A supported watch-only reference contains inconsistent public metadata.
+    #[error("watch-only reference is internally inconsistent")]
+    InvalidWatchOnlyReference,
+
     /// A supplied watch-only fingerprint was not 64 hexadecimal characters.
     #[error("watch-only fingerprint must be exactly 64 hexadecimal characters")]
     InvalidWatchOnlyFingerprint,

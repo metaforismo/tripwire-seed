@@ -13,19 +13,22 @@ use zeroize::Zeroizing;
 
 use crate::{
     Error, Result,
-    wallet::{ACCOUNT_STANDARD, TripwireSummary, WATCH_ONLY_SCHEMA},
+    wallet::{TripwireSummary, validate_tripwire_summary},
 };
 
 /// Maximum accepted size of a watch-only reference file.
 pub const MAX_WATCH_ONLY_BYTES: usize = 64 * 1024;
 
-/// Write watch-only metadata as pretty JSON, refusing to overwrite a path.
+/// Write semantically valid watch-only metadata as pretty JSON, refusing to
+/// overwrite a path.
 ///
 /// # Errors
 ///
-/// Returns an error when serialization fails, the path already exists, or the
-/// file cannot be created, written, or synchronized.
+/// Returns an error when the public fields are inconsistent, serialization
+/// fails, the path already exists, or the file cannot be created, written, or
+/// synchronized.
 pub fn write_watch_only(path: &Path, summary: &TripwireSummary) -> Result<()> {
+    validate_tripwire_summary(summary)?;
     let encoded = serde_json::to_vec_pretty(summary)?;
     let mut file = create_new_file(path, false)?;
     file.write_all(&encoded)?;
@@ -36,15 +39,17 @@ pub fn write_watch_only(path: &Path, summary: &TripwireSummary) -> Result<()> {
 
 /// Read and validate one bounded version 1 watch-only reference.
 ///
-/// Unknown fields, unsupported schemas, and account-policy changes fail closed.
-/// The file contains public wallet metadata, but its size is still bounded to
-/// prevent an attacker-controlled path from causing unbounded allocation.
+/// Unknown fields, unsupported schemas, account-policy changes, and internally
+/// inconsistent public metadata fail closed. The file contains public wallet
+/// metadata, but its size is still bounded to prevent an attacker-controlled
+/// path from causing unbounded allocation.
 ///
 /// # Errors
 ///
 /// Returns an error when the file cannot be read, exceeds
-/// [`MAX_WATCH_ONLY_BYTES`], is not strict JSON for the supported schema, or
-/// represents a different account standard.
+/// [`MAX_WATCH_ONLY_BYTES`], is not strict JSON for the supported schema, uses
+/// another account policy, or contains public fields that do not agree with its
+/// account xpubs and collision metadata.
 pub fn read_watch_only(path: &Path) -> Result<TripwireSummary> {
     let mut limited = File::open(path)?.take((MAX_WATCH_ONLY_BYTES + 1) as u64);
     let mut encoded = Vec::new();
@@ -56,9 +61,7 @@ pub fn read_watch_only(path: &Path) -> Result<TripwireSummary> {
     }
 
     let summary: TripwireSummary = serde_json::from_slice(&encoded)?;
-    if summary.schema != WATCH_ONLY_SCHEMA || summary.account_standard != ACCOUNT_STANDARD {
-        return Err(Error::UnsupportedWatchOnlyFormat);
-    }
+    validate_tripwire_summary(&summary)?;
     Ok(summary)
 }
 
@@ -305,6 +308,38 @@ mod tests {
             read_watch_only(&output),
             Err(Error::UnsupportedWatchOnlyFormat)
         ));
+    }
+
+    #[test]
+    fn internally_inconsistent_watch_only_reference_fails_closed() {
+        let mut inconsistent = summary();
+        inconsistent.decoy.first_receive_address.push('x');
+        let directory = tempfile::tempdir()
+            .unwrap_or_else(|error| unreachable!("temporary directory: {error}"));
+        let output = directory.path().join("inconsistent.json");
+        let encoded = serde_json::to_vec_pretty(&inconsistent)
+            .unwrap_or_else(|error| unreachable!("fixture serializes: {error}"));
+        fs::write(&output, encoded)
+            .unwrap_or_else(|error| unreachable!("test fixture writes: {error}"));
+        assert!(matches!(
+            read_watch_only(&output),
+            Err(Error::InvalidWatchOnlyReference)
+        ));
+    }
+
+    #[test]
+    fn inconsistent_watch_only_export_is_not_created() {
+        let mut inconsistent = summary();
+        inconsistent.collision_check.same_account_xpub =
+            !inconsistent.collision_check.same_account_xpub;
+        let directory = tempfile::tempdir()
+            .unwrap_or_else(|error| unreachable!("temporary directory: {error}"));
+        let output = directory.path().join("inconsistent.json");
+        assert!(matches!(
+            write_watch_only(&output, &inconsistent),
+            Err(Error::InvalidWatchOnlyReference)
+        ));
+        assert!(!output.exists());
     }
 
     #[cfg(unix)]

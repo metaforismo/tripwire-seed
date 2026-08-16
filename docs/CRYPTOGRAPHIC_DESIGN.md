@@ -91,6 +91,35 @@ and protected roles. It does not rely only on the four-byte fingerprint and is
 not a search of existing wallets, blockchains, private databases, or the global
 key space.
 
+## Semantic validation of public references
+
+A version 1 watch-only reference is not accepted merely because it is valid
+JSON. For both the decoy and protected roles, the loader parses the account xpub,
+requires the fixed BIP84 account path and expected network prefix, derives
+relative path `m/0/0`, and reconstructs:
+
+- the first receive address;
+- `wpkh([fingerprint/origin]xpub/0/*)` with its BIP380 checksum; and
+- `wpkh([fingerprint/origin]xpub/1/*)` with its BIP380 checksum.
+
+The reconstructed values must exactly equal the serialized fields. The role
+names, account policy, collision scope, and equality of the two complete account
+xpubs are also recomputed. This catches contradictory or partially edited public
+metadata before a fingerprint is printed or any secret is requested.
+
+The four-byte master fingerprint cannot itself be proven from the account xpub.
+BIP84 reaches the account through hardened derivation, and public child data
+cannot recover the hardened parent relationship. The loader therefore checks
+that the fingerprint is canonical lower-case hexadecimal and used consistently
+inside both descriptors; that is a self-consistency check, not proof of
+provenance.
+
+Testnet and signet also cannot be distinguished from these public fields alone:
+both use BIP44 coin type `1`, test-network extended-key serialization such as
+`tpub`, and `tb1` SegWit addresses. The serialized `network` value is therefore
+policy metadata committed by the reference fingerprint, not a fact recoverable
+from the account xpub or first address.
+
 ## Watch-only reference fingerprint
 
 The strict version 1 watch-only structure is serialized as compact JSON in its
