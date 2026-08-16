@@ -114,6 +114,12 @@ that the fingerprint is canonical lower-case hexadecimal and used consistently
 inside both descriptors; that is a self-consistency check, not proof of
 provenance.
 
+Testnet and signet also cannot be distinguished from these public fields alone:
+both use BIP44 coin type `1`, test-network extended-key serialization such as
+`tpub`, and `tb1` SegWit addresses. The serialized `network` value is therefore
+policy metadata committed by the reference fingerprint, not a fact recoverable
+from the account xpub or first address.
+
 ## Watch-only reference fingerprint
 
 The strict version 1 watch-only structure is serialized as compact JSON in its
