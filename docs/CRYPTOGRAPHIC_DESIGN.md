@@ -91,6 +91,34 @@ and protected roles. It does not rely only on the four-byte fingerprint and is
 not a search of existing wallets, blockchains, private databases, or the global
 key space.
 
+## Watch-only reference fingerprint
+
+The strict version 1 watch-only structure is serialized as compact JSON in its
+fixed Rust field order. The public reference fingerprint is:
+
+```text
+SHA256(
+  "tripwire-seed/watch-only-fingerprint/v1" || 0x00 ||
+  compact_version_1_watch_only_json
+)
+```
+
+The domain separator prevents the digest from being confused with an ordinary
+SHA-256 of the JSON or reused silently for another protocol. The fingerprint is
+encoded as 64 lower-case hexadecimal characters; verification also accepts
+upper-case hexadecimal input.
+
+Every version 1 public field is committed: schema, network, account policy,
+account xpubs, BIP380 descriptors, first addresses, roles, and collision
+metadata. Any supported field change therefore changes the fingerprint except
+with a SHA-256 collision. A future schema must define a new domain separator and
+canonical representation rather than silently reusing version 1.
+
+This construction provides integrity only relative to an expected fingerprint
+retained through a separate authenticated channel. It is not keyed, so it is
+not a MAC; it has no signer, so it is not a digital signature; and computing it
+from an untrusted file does not establish provenance.
+
 ## Secret lifetime and limitations
 
 - Owned generated strings and BIP39 objects use zeroization where their Rust
@@ -99,6 +127,8 @@ key space.
 - Hardened BIP32 derivation requires private key material in process memory.
   The upstream BIP32 types do not provide a complete process-wide wipe
   guarantee.
+- Watch-only JSON and fingerprints are public wallet metadata and are not
+  zeroized, but they can reveal address relationships.
 - The operating system, allocator, terminal, swap, crash dumps, cameras, and
   compromised dependencies can retain or expose secrets.
 - Compiler optimizations and hidden library copies mean zeroization is defense

@@ -17,6 +17,8 @@ All notable changes will be documented here. The format follows
   JSON output.
 - Strict, bounded watch-only reference loading and exact offline recovery
   verification.
+- Domain-separated SHA-256 watch-only fingerprints with optional pre-secret
+  verification against an independently retained value.
 - BIP84 vectors, redaction, permissions, no-overwrite, and TTY boundary tests.
 - Security policy, threat model, cryptographic design, CI, dependency review,
   RustSec audit, cargo-deny, CodeQL, and Dependabot configuration.

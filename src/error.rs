@@ -90,6 +90,14 @@ pub enum Error {
     #[error("watch-only reference uses an unsupported schema or account standard")]
     UnsupportedWatchOnlyFormat,
 
+    /// A supplied watch-only fingerprint was not 64 hexadecimal characters.
+    #[error("watch-only fingerprint must be exactly 64 hexadecimal characters")]
+    InvalidWatchOnlyFingerprint,
+
+    /// A watch-only reference did not match its independently retained fingerprint.
+    #[error("watch-only reference fingerprint verification failed")]
+    WatchOnlyFingerprintMismatch,
+
     /// Re-derived public wallet data did not exactly match the reference.
     #[error("watch-only recovery verification failed")]
     WatchOnlyMismatch,
