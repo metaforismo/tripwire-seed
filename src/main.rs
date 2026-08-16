@@ -323,7 +323,10 @@ fn process_exports(
     if let Some(path) = watch_only_out {
         write_watch_only(&path, summary)?;
         println!("Watch-only metadata written to {}", path.display());
-        println!("Watch-only fingerprint: {}", watch_only_fingerprint(summary)?);
+        println!(
+            "Watch-only fingerprint: {}",
+            watch_only_fingerprint(summary)?
+        );
         println!(
             "Store the fingerprint separately from the JSON if you want to detect later substitution."
         );
