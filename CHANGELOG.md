@@ -17,6 +17,8 @@ All notable changes will be documented here. The format follows
   JSON output.
 - Strict, bounded watch-only reference loading and exact offline recovery
   verification.
+- Semantic validation that reconstructs watch-only addresses and descriptors
+  from each account xpub and recomputes role, policy, and collision metadata.
 - Domain-separated SHA-256 watch-only fingerprints with optional pre-secret
   verification against an independently retained value.
 - BIP84 vectors, redaction, permissions, no-overwrite, and TTY boundary tests.
