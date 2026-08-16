@@ -142,6 +142,12 @@ canonical representation and consistent use in the descriptors. It cannot prove
 that an attacker-chosen fingerprint and otherwise self-consistent public data
 originated from a claimed master key.
 
+Likewise, testnet and signet public data share BIP44 coin type `1`, `tpub`
+extended-key serialization, and `tb1` native-SegWit addresses. Semantic checks
+cannot infer which of those two chains the operator intended. The serialized
+network is policy metadata; an independent reference fingerprint is what makes
+a later substitution of that field detectable.
+
 The domain-separated SHA-256 fingerprint commits to compact serialization of
 every supported public field. The CLI can compare it before requesting secrets.
 This detects substitution only when the expected fingerprint came through an
