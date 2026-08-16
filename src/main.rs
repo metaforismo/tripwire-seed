@@ -126,7 +126,7 @@ fn run() -> Result<()> {
     match cli.command {
         Commands::Create(arguments) => create(arguments),
         Commands::Inspect(arguments) => inspect(arguments),
-        Commands::Verify(arguments) => verify(arguments),
+        Commands::Verify(arguments) => verify(&arguments),
         Commands::AuditPassphrase => audit_interactive(),
     }
 }
@@ -213,7 +213,7 @@ fn inspect(arguments: InspectArgs) -> Result<()> {
     )
 }
 
-fn verify(arguments: VerifyArgs) -> Result<()> {
+fn verify(arguments: &VerifyArgs) -> Result<()> {
     require_interactive_terminal()?;
     let expected = read_watch_only(&arguments.watch_only)?;
     let mut mnemonic_text = Zeroizing::new(rpassword::prompt_password(
