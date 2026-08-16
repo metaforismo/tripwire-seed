@@ -79,6 +79,21 @@ pub enum Error {
     #[error("refusing to overwrite existing path: {0}")]
     OutputExists(PathBuf),
 
+    /// A watch-only reference exceeded the bounded input size.
+    #[error("watch-only reference exceeds the {max}-byte safety limit")]
+    WatchOnlyTooLarge {
+        /// Maximum accepted watch-only input size.
+        max: usize,
+    },
+
+    /// A watch-only reference does not match the supported schema and policy.
+    #[error("watch-only reference uses an unsupported schema or account standard")]
+    UnsupportedWatchOnlyFormat,
+
+    /// Re-derived public wallet data did not exactly match the reference.
+    #[error("watch-only recovery verification failed")]
+    WatchOnlyMismatch,
+
     /// A secret export is unavailable on this platform.
     #[error("plaintext secret export is unsupported on this platform in version 0.1")]
     SecretExportUnsupported,

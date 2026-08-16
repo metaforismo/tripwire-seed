@@ -27,6 +27,8 @@ sponsored by Ashigaru, Sparrow Wallet, COLDCARD, or their maintainers.
   and the protected wallet (non-empty passphrase).
 - Emits BIP380-checksummed receive and change descriptors to detect transcription
   and copy/paste errors during watch-only import.
+- Verifies an offline recovery drill by re-deriving and exactly comparing a
+  bounded, strict version 1 watch-only reference.
 - Compares the complete account xpubs locally; it does not call a server or
   pretend to perform a global collision search.
 - Exports watch-only JSON by default, SeedQR only after confirmation, and
@@ -106,6 +108,21 @@ Inspect an existing pair without displaying its secrets:
 cargo run --release --locked -- inspect
 ```
 
+Verify a recovery drill against a watch-only export created earlier:
+
+```console
+cargo run --release --locked -- verify \
+  --watch-only wallet.tripwire-watch-only.json
+```
+
+The verification command validates the public reference before requesting
+secrets, derives on the network recorded in that reference, and requires an
+exact match of the schema, account policy, full account xpubs, BIP380
+descriptors, first addresses, and collision metadata. Input is limited to 64
+KiB and unknown JSON fields fail closed. This detects a wrong mnemonic,
+passphrase, network, or altered public reference; it does not authenticate the
+file or certify an external wallet implementation.
+
 Audit a passphrase without deriving wallet data:
 
 ```console
@@ -130,9 +147,11 @@ tripwire-seed create --show-seedqr
 tripwire-seed create --dangerous-secret-out backup.tripwire-secrets.json
 ```
 
-Files are created with no-overwrite semantics. Plaintext secret export is
-disabled on platforms where version 0.1 cannot establish owner-only permissions
-before creation. Secure deletion is not promised: SSDs, snapshots, backups, and
+Watch-only files contain no spending secrets, but they reveal address
+relationships and should still be handled as private financial metadata. Files
+are created with no-overwrite semantics. Plaintext secret export is disabled on
+platforms where version 0.1 cannot establish owner-only permissions before
+creation. Secure deletion is not promised: SSDs, snapshots, backups, and
 copy-on-write filesystems can retain old data.
 
 See [wallet import guidance](docs/WALLET_IMPORTS.md) before moving funds.
@@ -148,7 +167,8 @@ RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --locked
 
 The test suite includes official BIP39, BIP84, and BIP380 vectors, dice rejection
 sampling, SeedQR encoding, redaction, no-overwrite behavior, Unix `0600` secret
-permissions, and the non-interactive CLI boundary.
+permissions, strict and bounded watch-only recovery verification, and the
+non-interactive CLI boundary.
 
 Read the [cryptographic design](docs/CRYPTOGRAPHIC_DESIGN.md),
 [threat model](docs/THREAT_MODEL.md), [security policy](SECURITY.md), and

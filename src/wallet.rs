@@ -8,13 +8,18 @@ use bitcoin::{
     bip32::{DerivationPath, Xpriv, Xpub},
     secp256k1::Secp256k1,
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use zeroize::Zeroizing;
 
 use crate::{Error, Result, descriptor::with_checksum};
 
+/// Stable schema identifier for watch-only exports.
+pub const WATCH_ONLY_SCHEMA: &str = "tripwire-seed/watch-only/v1";
+/// Exact account policy represented by version 1 watch-only exports.
+pub const ACCOUNT_STANDARD: &str = "BIP39 + BIP32 + BIP84 native SegWit (account 0)";
+
 /// Network presets supported by the CLI.
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Serialize)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum WalletNetwork {
     /// Bitcoin mainnet.
@@ -47,7 +52,8 @@ impl WalletNetwork {
 }
 
 /// Public, watch-only metadata for one wallet role.
-#[derive(Debug, Clone, Eq, PartialEq, Serialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 pub struct WalletPublicInfo {
     /// `decoy` for the empty passphrase or `protected` for the supplied passphrase.
     pub role: String,
@@ -66,7 +72,8 @@ pub struct WalletPublicInfo {
 }
 
 /// Result of comparing the full account public keys, not only 32-bit fingerprints.
-#[derive(Debug, Clone, Eq, PartialEq, Serialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 pub struct CollisionCheck {
     /// True only when both roles derived the exact same BIP84 account xpub.
     pub same_account_xpub: bool,
@@ -75,7 +82,8 @@ pub struct CollisionCheck {
 }
 
 /// Public metadata for a base/decoy wallet and a passphrase-protected wallet.
-#[derive(Debug, Clone, Eq, PartialEq, Serialize)]
+#[derive(Debug, Clone, Eq, PartialEq, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 pub struct TripwireSummary {
     /// Stable export schema identifier.
     pub schema: String,
@@ -107,9 +115,9 @@ pub fn derive_tripwire_summary(
     let same_account_xpub = decoy.account_xpub == protected.account_xpub;
 
     Ok(TripwireSummary {
-        schema: "tripwire-seed/watch-only/v1".to_owned(),
+        schema: WATCH_ONLY_SCHEMA.to_owned(),
         network,
-        account_standard: "BIP39 + BIP32 + BIP84 native SegWit (account 0)".to_owned(),
+        account_standard: ACCOUNT_STANDARD.to_owned(),
         decoy,
         protected,
         collision_check: CollisionCheck {

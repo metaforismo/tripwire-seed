@@ -3,10 +3,11 @@
 ## Overview
 
 `tripwire-seed` is a local Rust CLI that creates or inspects a BIP39 mnemonic
-and passphrase, derives public BIP84 metadata, and optionally exports secrets.
-Its primary runtime surfaces are the interactive terminal in `src/main.rs`,
-random-word and dice generation in `src/passphrase.rs`, derivation in
-`src/wallet.rs`, and file/SeedQR export in `src/export.rs`.
+and passphrase, derives public BIP84 metadata, verifies recovery against a prior
+watch-only export, and optionally exports secrets. Its primary runtime surfaces
+are the interactive terminal in `src/main.rs`, random-word and dice generation
+in `src/passphrase.rs`, derivation in `src/wallet.rs`, and file/SeedQR handling
+in `src/export.rs`.
 
 The assets are the mnemonic, BIP39 passphrase, derived private key material,
 correct association between the decoy and protected wallets, watch-only xpub
@@ -21,23 +22,25 @@ Trust boundaries:
 - Physical dice and transcription ↔ dice collector.
 - Secret mnemonic/passphrase ↔ BIP39 and BIP32 dependency code.
 - Process memory ↔ operating system, allocator, swap, crash dumps, and malware.
-- Process ↔ filesystem for public and plaintext exports.
+- Process ↔ filesystem for public references and public or plaintext exports.
 - Source repository ↔ dependency registry, CI actions, compiler, and release
   artifacts.
 - Public xpub/descriptor data ↔ external wallet applications and monitoring
   services.
 
 Operator-controlled inputs include dice rolls, network, passphrase word count,
-existing mnemonic/passphrase values, confirmation phrases, and output paths.
-Developer-controlled inputs include source changes, dependencies, CI workflows,
-and test vectors. Attacker-controlled inputs can include a malicious local path
-or filesystem race, poisoned dependency or build environment, terminal capture,
-malware, a biased entropy source, deceptive wallet software, and crafted
-passphrase text supplied during an inspection workflow.
+existing mnemonic/passphrase values, confirmation phrases, watch-only reference
+paths, and output paths. Developer-controlled inputs include source changes,
+dependencies, CI workflows, and test vectors. Attacker-controlled inputs can
+include a malicious local path or filesystem race, a crafted or oversized
+watch-only reference, poisoned dependency or build environment, terminal
+capture, malware, a biased entropy source, deceptive wallet software, and
+crafted passphrase text supplied during an inspection workflow.
 
 Security invariants:
 
-- Runtime wallet generation and derivation require no network.
+- Runtime wallet generation, derivation, and recovery verification require no
+  network.
 - Secret values are not accepted as CLI arguments or written to logs by design.
 - Watch-only output contains no mnemonic, passphrase, seed, xprv, or private key.
 - Secret display, SeedQR, and plaintext export are separate explicit actions.
@@ -50,6 +53,8 @@ Security invariants:
 - Decoy/protected equality is checked using full BIP84 account xpubs.
 - Exported receive and change descriptors include BIP380 checksums and refuse a
   second checksum suffix.
+- Watch-only references are bounded, decoded with a strict version 1 schema,
+  and compared exactly before a recovery drill is reported as successful.
 
 Assumptions:
 
@@ -58,13 +63,16 @@ Assumptions:
 - Physical dice are fair and entered faithfully.
 - The operator can protect the screen from cameras and observers.
 - Destination wallets implement BIP39/BIP32/BIP84 consistently.
+- A recovery reference was obtained through a trusted channel and protected
+  against substitution when authenticity matters.
 - Repository and dependency review happen before real-fund use.
 
 Out of scope are protection against a compromised kernel, firmware, compiler,
 CPU, RNG implementation, terminal, wallet application, physical coercion,
 camera, invasive side channel, or an attacker who already has both secrets.
 The tool does not monitor decoy funds, alert on spends, encrypt backups, provide
-secure deletion, or prove global uniqueness.
+secure deletion, authenticate watch-only files, certify third-party wallets, or
+prove global uniqueness.
 
 ## Attack Surface, Mitigations, and Attacker Stories
 
@@ -95,17 +103,26 @@ unknown to an attacker.
 A typo creates another valid wallet and can cause permanent loss. The CLI
 requires backup re-entry after generation, emits fingerprints and first
 addresses, emits BIP380-checksummed descriptors, and tests official BIP84 and
-BIP380 vectors. Descriptor checksums detect transcription errors but do not
-authenticate the xpub or wallet policy. Wallet-specific account policies can
-still differ; users must complete recovery drills.
+BIP380 vectors. The recovery command derives on the network recorded in a prior
+reference and exact-compares all version 1 public metadata. That catches wrong
+secrets, a wrong network, or altered public fields, but it does not authenticate
+the reference or prove that an external wallet uses the same policy. Wallet-
+specific account policies can still differ; users must complete recovery drills.
 
 ### Exports and filesystem
 
-Watch-only exports disclose address relationships. SeedQR exposes the mnemonic
-to any camera. Plaintext exports expose both wallets and may persist in SSD
-flash, snapshots, or backups. The program uses confirmation gates, `create_new`,
-Unix mode `0600`, synchronization, and fail-closed platform behavior. It cannot
-make later deletion reliable or defend an attacker-controlled parent directory.
+Watch-only exports disclose address relationships. A substituted watch-only
+reference can make a correct recovery appear to fail or can be paired with
+attacker-chosen secrets to create a misleading success. References are decoded
+before secret input, limited to 64 KiB, reject unknown fields, require the exact
+version 1 schema and account policy, and are compared in full. Operators still
+need an authenticated reference channel when substitution is in scope.
+
+SeedQR exposes the mnemonic to any camera. Plaintext exports expose both wallets
+and may persist in SSD flash, snapshots, or backups. The program uses
+confirmation gates, `create_new`, Unix mode `0600`, synchronization, and fail-
+closed platform behavior. It cannot make later deletion reliable or defend an
+attacker-controlled parent directory.
 
 ### Build and supply chain
 
@@ -135,11 +152,13 @@ perfect or substitute for reproducible independent builds and external audit.
 - SeedQR or secret display occurring without the explicit confirmation gate.
 - A passphrase normalization or network/path mismatch that can cause users to
   fund an unrecoverable wallet under documented steps.
+- Recovery verification reporting success when the full supported public wallet
+  policy does not match the supplied reference.
 
 ### Medium
 
 - Public xpub/descriptor disclosure beyond the selected output path.
-- A denial of service from crafted interactive input.
+- A denial of service from crafted interactive or watch-only input.
 - Audit output making a materially misleading strength claim without direct key
   compromise.
 - CI or documentation drift that weakens a defense but does not reach a secret
