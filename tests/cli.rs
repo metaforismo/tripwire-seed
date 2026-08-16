@@ -17,6 +17,7 @@ fn help_is_available_without_a_terminal() {
     assert!(stdout.contains("Offline BIP39 tripwire wallet planner"));
     assert!(stdout.contains("create"));
     assert!(stdout.contains("inspect"));
+    assert!(stdout.contains("fingerprint"));
     assert!(stdout.contains("verify"));
 }
 
@@ -35,4 +36,16 @@ fn secret_commands_reject_non_interactive_input() {
         let stderr = String::from_utf8_lossy(&output.stderr);
         assert!(stderr.contains("requires an interactive terminal"));
     }
+}
+
+#[test]
+fn fingerprint_command_is_non_interactive_and_bounded_by_file_loader() {
+    let output = binary()
+        .args(["fingerprint", "--watch-only", "missing-reference.json"])
+        .output()
+        .unwrap_or_else(|error| unreachable!("binary runs: {error}"));
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("I/O error"));
+    assert!(!stderr.contains("requires an interactive terminal"));
 }
