@@ -128,7 +128,7 @@ def is_windows_msvc_target(target: str) -> bool:
 def reproducibility_rustflags(target: str, existing: str = "") -> str:
     """Append the target-specific linker flag used by the candidate gate."""
 
-    parts = [existing.strip()] if existing.strip() else []
+    parts = existing.split()
     if is_windows_msvc_target(target) and WINDOWS_MSVC_REPRO_FLAG not in parts:
         parts.append(WINDOWS_MSVC_REPRO_FLAG)
     return " ".join(parts)
