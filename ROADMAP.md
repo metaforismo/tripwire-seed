@@ -8,20 +8,26 @@
   runner.
 - Main-branch candidate archives receive SHA-256 sidecars and GitHub SLSA
   provenance attestations.
+- A standard-library verifier validates untrusted candidate archives and compares
+  a separately produced executable byte-for-byte with the GitHub reference. It
+  is inspection-only by default and never executes the reference binary.
 - CI covers formatting, Clippy, Rust tests, rustdoc, MSRV, macOS and Windows,
-  RustSec, cargo-deny, dependency review, and CodeQL.
+  RustSec, cargo-deny, dependency review, CodeQL, release packaging, and the
+  independent-reproduction verifier's negative archive tests.
 
 These controls are evidence, not a stable-release decision. Same-runner equality
-does not replace independent reproduction, the self-test does not authenticate a
-binary, and CI does not replace external review or real recovery drills.
+and the comparison helper do not establish independent administration, the
+self-test does not authenticate a binary, and CI does not replace external
+review or real recovery drills.
 
 ## Before 0.1.0
 
 - [ ] Reproduce candidate executables on separately administered Linux, macOS,
   and Windows systems under
-  [#7](https://github.com/metaforismo/tripwire-seed/issues/7). The current CI
-  double builds and attestations are not independent cross-machine
-  reproducibility.
+  [#7](https://github.com/metaforismo/tripwire-seed/issues/7), following the
+  [independent reproduction procedure](docs/INDEPENDENT_REPRODUCTION.md). The
+  current CI double builds, attestations, and comparison helper are preparation,
+  not independent cross-machine reproducibility by themselves.
 - [ ] Complete version-pinned, unfunded recovery drills with Sparrow, COLDCARD,
   and Ashigaru under
   [#8](https://github.com/metaforismo/tripwire-seed/issues/8), following the
