@@ -28,6 +28,8 @@ jobs:
         run: rustup show active-toolchain
       - name: Test deterministic release packager
         run: python3 scripts/test_reproducible_release.py
+      - name: Test independent reproduction verifier
+        run: python3 scripts/test_verify_independent_reproduction.py
       - name: Check formatting
         run: cargo fmt --all -- --check
       - name: Lint
