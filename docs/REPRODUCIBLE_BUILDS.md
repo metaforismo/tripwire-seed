@@ -101,6 +101,40 @@ The command exits unsuccessfully if the two binaries differ, either self-test
 fails, the reports disagree, a required package document is missing, or the
 archive/checksum cannot be written.
 
+## Compare an independently produced candidate
+
+After an independently administered system builds the exact frozen commit, use
+`scripts/verify_independent_reproduction.py` to compare its candidate with the
+corresponding outer GitHub Actions artifact:
+
+```console
+python3 scripts/test_verify_independent_reproduction.py
+python3 scripts/verify_independent_reproduction.py \
+  --reference-artifact reference-github-artifact.zip \
+  --reference-artifact-sha256 <github-artifact-sha256> \
+  --reproduced-archive \
+    dist/tripwire-seed-v0.1.0-x86_64-unknown-linux-gnu.zip \
+  --expected-commit <40-character-commit> \
+  --expected-target x86_64-unknown-linux-gnu \
+  --report reproduction-report.json
+```
+
+The verifier validates the outer artifact digest, both sidecars, exact archive
+member sets, paths, metadata, normalized timestamps, permissions, public package
+documents, and raw executable bytes. It does not extract or execute the
+reference binary.
+
+Inspection-only mode is the default. `--execute-reproduced-self-test` explicitly
+executes only the reproduced binary's public-vector self-test; the helper is not
+a sandbox, so use that flag only after reviewing the frozen source and build.
+
+A matching report does not prove that the machine was independently
+administered, authenticate the source acquisition, or replace reviewer sign-off.
+The complete external procedure and evidence checklist are in
+[the independent reproduction guide](INDEPENDENT_REPRODUCTION.md). Issue #7
+remains open until all claimed native targets have qualifying independently
+reviewed reproductions.
+
 ## Verify a downloaded candidate
 
 First verify the SHA-256 sidecar with a trusted local hashing tool. On GNU/Linux:
