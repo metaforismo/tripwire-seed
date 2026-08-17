@@ -26,6 +26,10 @@ All notable changes will be documented here. The format follows
 - Native Linux, macOS, and Windows release-candidate double builds with
   byte-for-byte executable comparison, deterministic ZIP packaging, SHA-256
   sidecars, and main-branch SLSA provenance attestations.
+- Normative first stable-release audit scope with commit-freeze, evidence,
+  reviewer-deliverable, and release-blocking criteria.
+- Privacy-safe, version-pinned recovery drill protocol for unfunded Sparrow,
+  COLDCARD, and Ashigaru interoperability evidence.
 - BIP84 vectors, redaction, permissions, no-overwrite, and TTY boundary tests.
 - Security policy, threat model, cryptographic design, CI, dependency review,
   RustSec audit, cargo-deny, CodeQL, and Dependabot configuration.
