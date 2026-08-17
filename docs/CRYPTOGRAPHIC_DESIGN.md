@@ -148,6 +148,32 @@ retained through a separate authenticated channel. It is not keyed, so it is
 not a MAC; it has no signer, so it is not a digital signature; and computing it
 from an untrusted file does not establish provenance.
 
+## Deterministic public-vector self-test
+
+The non-interactive `self-test` command executes known-answer checks over fixed,
+public inputs. Version 1 covers the published BIP39 seed vector, the BIP84
+account/address vector, exact receive and change descriptors, the BIP380
+checksum vector, the implemented dice rejection mapping, semantic watch-only
+validation, and the domain-separated watch-only fingerprint.
+
+The machine-readable report contains only a versioned schema, package version,
+check names, and boolean results. It does not serialize the public mnemonic,
+passphrase, seed, xpub, descriptors, or addresses used internally, and it never
+reads or generates user wallet material.
+
+A successful report demonstrates that this particular executable and its linked
+dependencies reproduce those expected public results. It does **not**:
+
+- authenticate where the executable came from;
+- verify a downloaded checksum or signature;
+- test the operating-system CSPRNG or physical dice;
+- prove that two independently built binaries are reproducible;
+- exercise terminal, filesystem, camera, swap, or malware boundaries; or
+- replace independent cryptographic review and real recovery drills.
+
+Release candidates should run the self-test in addition to, not instead of, the
+full test suite and cross-platform build process.
+
 ## Secret lifetime and limitations
 
 - Owned generated strings and BIP39 objects use zeroization where their Rust
