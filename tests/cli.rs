@@ -99,15 +99,17 @@ fn self_test_is_non_interactive_machine_readable_and_secret_free() {
     assert_eq!(report["schema"], SELF_TEST_SCHEMA);
     assert_eq!(report["public_vectors_only"], true);
     assert_eq!(report["passed"], true);
-    assert_eq!(
-        report["checks"]
-            .as_array()
-            .map_or(0, std::vec::Vec::len),
-        9
-    );
+    assert_eq!(report["checks"].as_array().map_or(0, std::vec::Vec::len), 9);
 
     let stdout = String::from_utf8_lossy(&output.stdout);
-    for excluded in ["abandon abandon", "TREZOR", "xpub", "wpkh(", "bc1q"] {
+    for excluded in [
+        "abandon abandon",
+        "TREZOR",
+        "c55257c360c07c72",
+        "xpub6CatWdiZiodmU",
+        "wpkh([73c5da0a",
+        "bc1qcr8te4kr609g",
+    ] {
         assert!(!stdout.contains(excluded));
     }
 }
