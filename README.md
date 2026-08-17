@@ -1,6 +1,7 @@
 # Tripwire Seed
 
 [![CI](https://github.com/metaforismo/tripwire-seed/actions/workflows/ci.yml/badge.svg)](https://github.com/metaforismo/tripwire-seed/actions/workflows/ci.yml)
+[![Release candidate](https://github.com/metaforismo/tripwire-seed/actions/workflows/release-candidate.yml/badge.svg)](https://github.com/metaforismo/tripwire-seed/actions/workflows/release-candidate.yml)
 [![CodeQL](https://github.com/metaforismo/tripwire-seed/actions/workflows/codeql.yml/badge.svg)](https://github.com/metaforismo/tripwire-seed/actions/workflows/codeql.yml)
 [![License: MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue)](LICENSE-MIT)
 
@@ -93,6 +94,17 @@ cargo build --release --locked
 The runtime has no networking feature. Dependencies are required only to build
 the program. For an air-gapped workflow, fetch and vendor dependencies on a
 separate trusted machine, verify the transfer, then build offline.
+
+The `Release candidate` workflow performs two clean native builds on each
+supported GitHub-hosted operating system, requires the two executables to be
+byte-for-byte identical, executes the public-vector self-test on both, and
+produces deterministic ZIP packages with SHA-256 sidecars. Main-branch
+candidates also receive GitHub SLSA provenance attestations.
+
+That is **same-runner double-build evidence**, not a complete independent
+reproducibility proof. It does not authenticate another source checkout, audit
+the compiler or runner, or prove that a separately administered machine will
+produce the same bytes. See the [release-candidate build boundary](docs/REPRODUCIBLE_BUILDS.md).
 
 ## Use
 
@@ -211,6 +223,7 @@ See [wallet import guidance](docs/WALLET_IMPORTS.md) before moving funds.
 ## Verification
 
 ```console
+python3 scripts/test_reproducible_release.py
 cargo fmt --all -- --check
 cargo clippy --all-targets --all-features -- -D warnings
 cargo test --all-targets --locked
@@ -219,15 +232,16 @@ RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --locked
 ```
 
 The test suite includes official BIP39, BIP84, and BIP380 vectors, dice rejection
-sampling, the packaged-binary public-vector self-test, SeedQR encoding,
-redaction, no-overwrite behavior, Unix `0600` secret permissions, strict and
-bounded watch-only recovery verification, semantic public-field consistency
-checks, domain-separated fingerprint regressions, and the non-interactive CLI
-boundary.
+sampling, the packaged-binary public-vector self-test, deterministic release
+packaging, SeedQR encoding, redaction, no-overwrite behavior, Unix `0600` secret
+permissions, strict and bounded watch-only recovery verification, semantic
+public-field consistency checks, domain-separated fingerprint regressions, and
+the non-interactive CLI boundary.
 
 Read the [cryptographic design](docs/CRYPTOGRAPHIC_DESIGN.md),
-[threat model](docs/THREAT_MODEL.md), [security policy](SECURITY.md), and
-[roadmap](ROADMAP.md) before evaluating the project.
+[threat model](docs/THREAT_MODEL.md), [release-candidate build boundary](docs/REPRODUCIBLE_BUILDS.md),
+[security policy](SECURITY.md), and [roadmap](ROADMAP.md) before evaluating the
+project.
 
 ## License
 

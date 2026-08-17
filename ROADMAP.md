@@ -3,7 +3,10 @@
 ## Before 0.1.0
 
 - Independent review of entropy sampling and BIP39/BIP84 derivation.
-- Reproduce builds on Linux, macOS, and Windows.
+- Reproduce candidate executables on separately administered Linux, macOS, and
+  Windows systems. CI now requires two byte-identical clean builds on each
+  native GitHub-hosted runner and attests main-branch candidate archives, but
+  that is not independent cross-machine reproducibility.
 - Run the deterministic public-vector self-test on every release candidate; this
   checks packaged implementation behavior but does not authenticate an artifact
   or replace reproducibility and independent review.
@@ -20,7 +23,6 @@
 - Deterministic, independently testable entropy transcripts that reveal no
   secret material.
 - Optional multi-decoy planning without persistent passphrase storage.
-- Reproducible binary build documentation.
 - Privacy-preserving decoy monitoring design, only if its metadata tradeoffs can
   be made explicit and safe.
 
