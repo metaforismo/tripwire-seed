@@ -18,15 +18,11 @@ pub const SELF_TEST_SCHEMA: &str = "tripwire-seed/self-test/v1";
 const PUBLIC_MNEMONIC: &str =
     "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
 const PUBLIC_BIP39_PASSPHRASE: &str = "TREZOR";
-const EXPECTED_BIP39_SEED: &str =
-    "c55257c360c07c72029aebc1b53c05ed0362ada38ead3e3e9efa3708e53495531f09a6987599d18264c1e1c92f2cf141630c7a3c4ab7c81b2f001698e7463b04";
-const EXPECTED_ACCOUNT_XPUB: &str =
-    "xpub6CatWdiZiodmUeTDp8LT5or8nmbKNcuyvz7WyksVFkKB4RHwCD3XyuvPEbvqAQY3rAPshWcMLoP2fMFMKHPJ4ZeZXYVUhLv1VMrjPC7PW6V";
+const EXPECTED_BIP39_SEED: &str = "c55257c360c07c72029aebc1b53c05ed0362ada38ead3e3e9efa3708e53495531f09a6987599d18264c1e1c92f2cf141630c7a3c4ab7c81b2f001698e7463b04";
+const EXPECTED_ACCOUNT_XPUB: &str = "xpub6CatWdiZiodmUeTDp8LT5or8nmbKNcuyvz7WyksVFkKB4RHwCD3XyuvPEbvqAQY3rAPshWcMLoP2fMFMKHPJ4ZeZXYVUhLv1VMrjPC7PW6V";
 const EXPECTED_FIRST_ADDRESS: &str = "bc1qcr8te4kr609gcawutmrza0j4xv80jy8z306fyu";
-const EXPECTED_RECEIVE_DESCRIPTOR: &str =
-    "wpkh([73c5da0a/84h/0h/0h]xpub6CatWdiZiodmUeTDp8LT5or8nmbKNcuyvz7WyksVFkKB4RHwCD3XyuvPEbvqAQY3rAPshWcMLoP2fMFMKHPJ4ZeZXYVUhLv1VMrjPC7PW6V/0/*)#afwvtk2s";
-const EXPECTED_CHANGE_DESCRIPTOR: &str =
-    "wpkh([73c5da0a/84h/0h/0h]xpub6CatWdiZiodmUeTDp8LT5or8nmbKNcuyvz7WyksVFkKB4RHwCD3XyuvPEbvqAQY3rAPshWcMLoP2fMFMKHPJ4ZeZXYVUhLv1VMrjPC7PW6V/1/*)#vatdkr6g";
+const EXPECTED_RECEIVE_DESCRIPTOR: &str = "wpkh([73c5da0a/84h/0h/0h]xpub6CatWdiZiodmUeTDp8LT5or8nmbKNcuyvz7WyksVFkKB4RHwCD3XyuvPEbvqAQY3rAPshWcMLoP2fMFMKHPJ4ZeZXYVUhLv1VMrjPC7PW6V/0/*)#afwvtk2s";
+const EXPECTED_CHANGE_DESCRIPTOR: &str = "wpkh([73c5da0a/84h/0h/0h]xpub6CatWdiZiodmUeTDp8LT5or8nmbKNcuyvz7WyksVFkKB4RHwCD3XyuvPEbvqAQY3rAPshWcMLoP2fMFMKHPJ4ZeZXYVUhLv1VMrjPC7PW6V/1/*)#vatdkr6g";
 const EXPECTED_WATCH_ONLY_FINGERPRINT: &str =
     "4589b151544e36e6c9efa228654224d010373b340eb9b9e1f31ac024ca56383f";
 
@@ -130,11 +126,13 @@ pub fn run_self_test() -> Result<SelfTestReport> {
     let generated = dice.finish()?;
     let dice_output = generated.source() == GenerationSource::Dice
         && generated.entropy_bits() == 66
-        && generated.expose()
-            == "abandon-abandon-abandon-abandon-abandon-abandon";
+        && generated.expose() == "abandon-abandon-abandon-abandon-abandon-abandon";
 
     let checks = vec![
-        SelfTestCheck::new("bip39-seed", seed.as_hex().to_string() == EXPECTED_BIP39_SEED),
+        SelfTestCheck::new(
+            "bip39-seed",
+            seed.as_hex().to_string() == EXPECTED_BIP39_SEED,
+        ),
         SelfTestCheck::new(
             "bip84-account-xpub",
             summary.decoy.account_xpub == EXPECTED_ACCOUNT_XPUB,
@@ -182,8 +180,8 @@ mod tests {
 
     #[test]
     fn public_vector_report_passes() {
-        let report = run_self_test()
-            .unwrap_or_else(|error| unreachable!("public vectors execute: {error}"));
+        let report =
+            run_self_test().unwrap_or_else(|error| unreachable!("public vectors execute: {error}"));
         assert!(report.passed());
         assert_eq!(report.failed_count(), 0);
         assert_eq!(report.checks().len(), 9);
@@ -193,15 +191,17 @@ mod tests {
 
     #[test]
     fn serialized_report_contains_no_vector_material() {
-        let report = run_self_test()
-            .unwrap_or_else(|error| unreachable!("public vectors execute: {error}"));
+        let report =
+            run_self_test().unwrap_or_else(|error| unreachable!("public vectors execute: {error}"));
         let encoded = serde_json::to_string(&report)
             .unwrap_or_else(|error| unreachable!("report serializes: {error}"));
         for excluded in [
-            "abandon abandon",
+            PUBLIC_MNEMONIC,
             PUBLIC_BIP39_PASSPHRASE,
-            "xpub",
-            "wpkh(",
+            EXPECTED_BIP39_SEED,
+            EXPECTED_ACCOUNT_XPUB,
+            EXPECTED_RECEIVE_DESCRIPTOR,
+            EXPECTED_CHANGE_DESCRIPTOR,
             EXPECTED_FIRST_ADDRESS,
         ] {
             assert!(!encoded.contains(excluded));
