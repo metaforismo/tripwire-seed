@@ -16,6 +16,7 @@ use tripwire_seed::{
     },
     fingerprint::{verify_watch_only_fingerprint, watch_only_fingerprint},
     passphrase::{DiceAccumulator, GeneratedPassphrase, generate_system},
+    self_test::run_self_test,
     wallet::{TripwireSummary, WalletNetwork, derive_tripwire_summary},
 };
 use zeroize::{Zeroize, Zeroizing};
@@ -37,6 +38,8 @@ enum Commands {
     Fingerprint(FingerprintArgs),
     /// Verify a recovery drill against a prior watch-only export.
     Verify(VerifyArgs),
+    /// Run deterministic known-answer checks using public vectors only.
+    SelfTest(SelfTestArgs),
     /// Audit a passphrase conservatively without deriving a wallet.
     AuditPassphrase,
 }
@@ -105,6 +108,13 @@ struct VerifyArgs {
     expected_fingerprint: Option<String>,
 }
 
+#[derive(Debug, clap::Args)]
+struct SelfTestArgs {
+    /// Emit one stable machine-readable JSON report.
+    #[arg(long)]
+    json: bool,
+}
+
 #[derive(Debug, Clone, Copy, Eq, PartialEq, ValueEnum)]
 enum PassphraseSource {
     System,
@@ -142,6 +152,7 @@ fn run() -> Result<()> {
         Commands::Inspect(arguments) => inspect(arguments),
         Commands::Fingerprint(arguments) => fingerprint(&arguments),
         Commands::Verify(arguments) => verify(&arguments),
+        Commands::SelfTest(arguments) => self_test(&arguments),
         Commands::AuditPassphrase => audit_interactive(),
     }
 }
@@ -257,11 +268,39 @@ fn verify(arguments: &VerifyArgs) -> Result<()> {
         "BIP39 passphrase (input hidden): ",
     )?);
     let actual = derive_tripwire_summary(&mnemonic, passphrase.as_str(), expected.network)?;
-
     verify_watch_only(&expected, &actual)?;
     println!("Watch-only recovery verification: OK");
     print_summary(&actual);
     Ok(())
+}
+
+fn self_test(arguments: &SelfTestArgs) -> Result<()> {
+    let report = run_self_test()?;
+    if arguments.json {
+        println!("{}", serde_json::to_string_pretty(&report)?);
+    } else {
+        println!(
+            "Deterministic public-vector self-test for tripwire-seed {}",
+            report.crate_version()
+        );
+        println!("No user wallet material is generated, read, or printed.");
+        for check in report.checks() {
+            println!(
+                "{}: {}",
+                check.name(),
+                if check.passed() { "OK" } else { "FAILED" }
+            );
+        }
+        println!("Overall: {}", if report.passed() { "OK" } else { "FAILED" });
+    }
+
+    if report.passed() {
+        Ok(())
+    } else {
+        Err(Error::SelfTestFailed {
+            failed: report.failed_count(),
+        })
+    }
 }
 
 fn audit_interactive() -> Result<()> {

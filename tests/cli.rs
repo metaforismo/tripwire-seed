@@ -6,6 +6,7 @@ use bip39::{Language, Mnemonic};
 use tripwire_seed::{
     export::write_watch_only,
     fingerprint::watch_only_fingerprint,
+    self_test::SELF_TEST_SCHEMA,
     wallet::{WalletNetwork, derive_tripwire_summary},
 };
 
@@ -26,6 +27,7 @@ fn help_is_available_without_a_terminal() {
     assert!(stdout.contains("inspect"));
     assert!(stdout.contains("fingerprint"));
     assert!(stdout.contains("verify"));
+    assert!(stdout.contains("self-test"));
 }
 
 #[test]
@@ -81,4 +83,33 @@ fn fingerprint_command_matches_the_library_without_a_terminal() {
     assert!(output.status.success());
     assert_eq!(String::from_utf8_lossy(&output.stdout).trim(), expected);
     assert!(output.stderr.is_empty());
+}
+
+#[test]
+fn self_test_is_non_interactive_machine_readable_and_secret_free() {
+    let output = binary()
+        .args(["self-test", "--json"])
+        .output()
+        .unwrap_or_else(|error| unreachable!("binary runs: {error}"));
+    assert!(output.status.success());
+    assert!(output.stderr.is_empty());
+
+    let report: serde_json::Value = serde_json::from_slice(&output.stdout)
+        .unwrap_or_else(|error| unreachable!("self-test emits JSON: {error}"));
+    assert_eq!(report["schema"], SELF_TEST_SCHEMA);
+    assert_eq!(report["public_vectors_only"], true);
+    assert_eq!(report["passed"], true);
+    assert_eq!(report["checks"].as_array().map_or(0, std::vec::Vec::len), 9);
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    for excluded in [
+        "abandon abandon",
+        "TREZOR",
+        "c55257c360c07c72",
+        "xpub6CatWdiZiodmU",
+        "wpkh([73c5da0a",
+        "bc1qcr8te4kr609g",
+    ] {
+        assert!(!stdout.contains(excluded));
+    }
 }

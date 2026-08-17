@@ -31,6 +31,8 @@ sponsored by Ashigaru, Sparrow Wallet, COLDCARD, or their maintainers.
   bounded, strict version 1 watch-only reference.
 - Reconstructs addresses and descriptors from each account xpub and rejects
   internally inconsistent roles, derivation policy, or collision metadata.
+- Runs a deterministic, non-interactive packaged-binary self-test using fixed
+  public BIP39, BIP84, BIP380, dice, and fingerprint vectors only.
 - Computes a domain-separated SHA-256 fingerprint that commits to every public
   field in a watch-only reference.
 - Compares the complete account xpubs locally; it does not call a server or
@@ -111,6 +113,20 @@ Inspect an existing pair without displaying its secrets:
 ```console
 cargo run --release --locked -- inspect
 ```
+
+Run deterministic known-answer checks on a source build or packaged binary
+without entering or generating user wallet material:
+
+```console
+cargo run --release --locked -- self-test
+cargo run --release --locked -- self-test --json
+```
+
+The self-test compares this executable against fixed public BIP39, BIP84,
+BIP380, dice-rejection, semantic-validation, and fingerprint results. Its JSON
+report contains only version metadata, check names, and booleans. Success does
+not authenticate the binary, test the operating-system CSPRNG, prove a
+reproducible build, or replace independent review and wallet recovery drills.
 
 Print the canonical fingerprint of a watch-only reference without entering any
 secret:
@@ -198,14 +214,16 @@ See [wallet import guidance](docs/WALLET_IMPORTS.md) before moving funds.
 cargo fmt --all -- --check
 cargo clippy --all-targets --all-features -- -D warnings
 cargo test --all-targets --locked
+cargo run --locked -- self-test --json
 RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --locked
 ```
 
 The test suite includes official BIP39, BIP84, and BIP380 vectors, dice rejection
-sampling, SeedQR encoding, redaction, no-overwrite behavior, Unix `0600` secret
-permissions, strict and bounded watch-only recovery verification, semantic
-public-field consistency checks, domain-separated fingerprint regressions, and
-the non-interactive CLI boundary.
+sampling, the packaged-binary public-vector self-test, SeedQR encoding,
+redaction, no-overwrite behavior, Unix `0600` secret permissions, strict and
+bounded watch-only recovery verification, semantic public-field consistency
+checks, domain-separated fingerprint regressions, and the non-interactive CLI
+boundary.
 
 Read the [cryptographic design](docs/CRYPTOGRAPHIC_DESIGN.md),
 [threat model](docs/THREAT_MODEL.md), [security policy](SECURITY.md), and

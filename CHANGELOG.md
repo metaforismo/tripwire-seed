@@ -21,6 +21,8 @@ All notable changes will be documented here. The format follows
   from each account xpub and recomputes role, policy, and collision metadata.
 - Domain-separated SHA-256 watch-only fingerprints with optional pre-secret
   verification against an independently retained value.
+- Non-interactive packaged-binary self-test over fixed public BIP39, BIP84,
+  BIP380, dice-rejection, semantic-validation, and fingerprint vectors.
 - BIP84 vectors, redaction, permissions, no-overwrite, and TTY boundary tests.
 - Security policy, threat model, cryptographic design, CI, dependency review,
   RustSec audit, cargo-deny, CodeQL, and Dependabot configuration.

@@ -32,6 +32,8 @@ jobs:
         run: cargo clippy --locked --all-targets --all-features -- -D warnings
       - name: Test
         run: cargo test --locked --all-targets
+      - name: Run deterministic public-vector self-test
+        run: cargo run --locked -- self-test --json
       - name: Build documentation
         env:
           RUSTDOCFLAGS: -D warnings
