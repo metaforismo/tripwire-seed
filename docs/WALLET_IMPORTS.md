@@ -7,6 +7,12 @@ or testnet where supported. Record the master fingerprint, derivation path, and
 first receive address printed by `tripwire-seed`, then require the destination
 wallet to reproduce the expected public data.
 
+For release-gate evidence, follow the complete
+[version-pinned recovery drill protocol](RECOVERY_DRILL.md). It requires a prior
+strict watch-only reference, an independently retained fingerprint, exact public
+field comparisons, negative drills, privacy-safe evidence, and newly generated
+unfunded material only.
+
 Stop if any value differs. Common causes include a passphrase typo, a different
 derivation path, a different network, Unicode normalization surprises, or an
 application-specific account policy.

@@ -106,6 +106,24 @@ reproducibility proof. It does not authenticate another source checkout, audit
 the compiler or runner, or prove that a separately administered machine will
 produce the same bytes. See the [release-candidate build boundary](docs/REPRODUCIBLE_BUILDS.md).
 
+## Stable-release gates
+
+Automated checks are not sufficient for a stable release. Three public gates
+remain deliberately separate:
+
+- [#7: independent cross-machine reproduction](https://github.com/metaforismo/tripwire-seed/issues/7)
+  for Linux, macOS, and Windows candidate executables;
+- [#8: version-pinned recovery drills](https://github.com/metaforismo/tripwire-seed/issues/8)
+  with unfunded Sparrow, COLDCARD, and Ashigaru test material, following the
+  [privacy-safe drill protocol](docs/RECOVERY_DRILL.md); and
+- [#9: independent security review](https://github.com/metaforismo/tripwire-seed/issues/9)
+  against the [first stable-release audit scope](docs/AUDIT_SCOPE.md).
+
+No `0.1.0` tag or stable artifact should be published merely because CI,
+checksums, provenance, or the deterministic self-test are green. Every
+release-blocking finding must be remediated and independently rechecked on a
+final frozen commit.
+
 ## Use
 
 Run the interactive wizard on a trusted offline computer:
@@ -218,7 +236,9 @@ secret export is disabled on platforms where version 0.1 cannot establish
 owner-only permissions before creation. Secure deletion is not promised: SSDs,
 snapshots, backups, and copy-on-write filesystems can retain old data.
 
-See [wallet import guidance](docs/WALLET_IMPORTS.md) before moving funds.
+See [wallet import guidance](docs/WALLET_IMPORTS.md) and the
+[version-pinned recovery drill protocol](docs/RECOVERY_DRILL.md) before moving
+funds.
 
 ## Verification
 
@@ -239,9 +259,11 @@ public-field consistency checks, domain-separated fingerprint regressions, and
 the non-interactive CLI boundary.
 
 Read the [cryptographic design](docs/CRYPTOGRAPHIC_DESIGN.md),
-[threat model](docs/THREAT_MODEL.md), [release-candidate build boundary](docs/REPRODUCIBLE_BUILDS.md),
-[security policy](SECURITY.md), and [roadmap](ROADMAP.md) before evaluating the
-project.
+[threat model](docs/THREAT_MODEL.md),
+[first stable-release audit scope](docs/AUDIT_SCOPE.md),
+[release-candidate build boundary](docs/REPRODUCIBLE_BUILDS.md),
+[recovery drill protocol](docs/RECOVERY_DRILL.md), [security policy](SECURITY.md),
+and [roadmap](ROADMAP.md) before evaluating the project.
 
 ## License
 
