@@ -26,6 +26,9 @@ All notable changes will be documented here. The format follows
 - Native Linux, macOS, and Windows release-candidate double builds with
   byte-for-byte executable comparison, deterministic ZIP packaging, SHA-256
   sidecars, and main-branch SLSA provenance attestations.
+- Strict candidate-reproduction comparison with bounded archive validation,
+  no-overwrite privacy-safe evidence, and explicit opt-in before executing the
+  reproducer's local public-vector self-test.
 - Normative first stable-release audit scope with commit-freeze, evidence,
   reviewer-deliverable, and release-blocking criteria.
 - Privacy-safe, version-pinned recovery drill protocol for unfunded Sparrow,
