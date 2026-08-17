@@ -1,3 +1,5 @@
+//! Regression checks for the committed public fuzz corpus.
+
 use tripwire_seed::{
     Error,
     descriptor::{descriptor_checksum, with_checksum},
