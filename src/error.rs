@@ -41,6 +41,13 @@ pub enum Error {
     #[error("serialization failed: {0}")]
     Serialization(#[from] serde_json::Error),
 
+    /// One or more deterministic public-vector checks failed.
+    #[error("deterministic public-vector self-test failed ({failed} checks)")]
+    SelfTestFailed {
+        /// Number of known-answer checks that failed.
+        failed: usize,
+    },
+
     /// QR generation failed.
     #[error("SeedQR generation failed: {0}")]
     Qr(#[from] qrcode::types::QrError),
