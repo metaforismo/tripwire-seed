@@ -11,6 +11,7 @@ pub mod error;
 pub mod export;
 pub mod fingerprint;
 pub mod passphrase;
+pub mod self_test;
 pub mod wallet;
 
 pub use error::{Error, Result};
