@@ -11,8 +11,10 @@ import zipfile
 
 from reproducible_release import (
     METADATA_SCHEMA,
+    WINDOWS_MSVC_REPRO_FLAG,
     create_archive,
     normalized_zip_datetime,
+    reproducibility_rustflags,
     sha256_file,
     write_checksum_sidecar,
 )
@@ -78,6 +80,19 @@ class ReproducibleReleaseTests(unittest.TestCase):
             sidecar = write_checksum_sidecar(archive)
             expected = f"{sha256_file(archive)}  {archive.name}\n"
             self.assertEqual(sidecar.read_text(encoding="ascii"), expected)
+
+    def test_msvc_repro_flag_is_target_specific_and_preserves_existing_flags(self) -> None:
+        existing = "-Ctarget-cpu=x86-64-v2"
+        windows = reproducibility_rustflags("x86_64-pc-windows-msvc", existing)
+        self.assertEqual(windows, f"{existing} {WINDOWS_MSVC_REPRO_FLAG}")
+        self.assertEqual(
+            reproducibility_rustflags("x86_64-pc-windows-msvc", windows),
+            windows,
+        )
+        self.assertEqual(
+            reproducibility_rustflags("x86_64-unknown-linux-gnu", existing),
+            existing,
+        )
 
 
 if __name__ == "__main__":
