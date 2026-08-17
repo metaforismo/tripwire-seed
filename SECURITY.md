@@ -32,7 +32,14 @@ fix and release path exist.
 - Supply-chain changes that can execute while secrets are handled.
 
 The repository-wide assumptions, boundaries, and severity calibration are in
-[the threat model](docs/THREAT_MODEL.md).
+[the threat model](docs/THREAT_MODEL.md). The normative coverage and evidence
+required for the first independent assessment are frozen in the
+[first stable-release audit scope](docs/AUDIT_SCOPE.md). Passing automated CI or
+same-runner release-candidate builds does not satisfy that external review gate.
+
+Version-pinned interoperability evidence must follow the
+[recovery drill protocol](docs/RECOVERY_DRILL.md) and use only newly generated,
+unfunded signet or testnet material.
 
 ## Safe research
 
