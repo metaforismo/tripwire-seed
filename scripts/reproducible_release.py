@@ -25,6 +25,7 @@ from typing import Any, Iterable, Mapping, Sequence
 
 PACKAGE_NAME = "tripwire-seed"
 METADATA_SCHEMA = "tripwire-seed/release-candidate/v1"
+WINDOWS_MSVC_REPRO_FLAG = "-Clink-arg=/Brepro"
 ZIP_MIN_YEAR = 1980
 
 
@@ -118,6 +119,21 @@ def executable_name(target: str) -> str:
     return f"{PACKAGE_NAME}.exe" if "windows" in target else PACKAGE_NAME
 
 
+def is_windows_msvc_target(target: str) -> bool:
+    """Return whether a Rust target uses the native Windows MSVC linker."""
+
+    return target.endswith("-windows-msvc")
+
+
+def reproducibility_rustflags(target: str, existing: str = "") -> str:
+    """Append the target-specific linker flag used by the candidate gate."""
+
+    parts = [existing.strip()] if existing.strip() else []
+    if is_windows_msvc_target(target) and WINDOWS_MSVC_REPRO_FLAG not in parts:
+        parts.append(WINDOWS_MSVC_REPRO_FLAG)
+    return " ".join(parts)
+
+
 def build_binary(root: Path, target: str, target_dir: Path, epoch: int) -> Path:
     """Perform one clean locked release build and return the executable path."""
 
@@ -129,6 +145,9 @@ def build_binary(root: Path, target: str, target_dir: Path, epoch: int) -> Path:
             "SOURCE_DATE_EPOCH": str(epoch),
         }
     )
+    rustflags = reproducibility_rustflags(target, environment.get("RUSTFLAGS", ""))
+    if rustflags:
+        environment["RUSTFLAGS"] = rustflags
     run_checked(
         ["cargo", "build", "--release", "--locked", "--target", target],
         cwd=root,
@@ -294,6 +313,9 @@ def build_release_candidate(root: Path, target: str, output_dir: Path) -> dict[s
             "same_runner_double_build": True,
             "rustc": rustc,
             "cargo": cargo,
+            "linker_reproducibility_flags": (
+                ["/Brepro"] if is_windows_msvc_target(target) else []
+            ),
             "self_test_schema": first_report["schema"],
             "self_test_passed": True,
             "public_vectors_only": True,
