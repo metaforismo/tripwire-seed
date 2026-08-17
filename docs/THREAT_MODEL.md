@@ -50,8 +50,9 @@ Security invariants:
   xprv, or private key.
 - Secret display, SeedQR, and plaintext export are separate explicit actions.
 - Output creation never overwrites an existing path.
-- Plaintext secret files are created owner-only on Unix before content is
-  written; unsupported platforms fail closed.
+- Watch-only and plaintext secret files are created owner-only on Unix before
+  content is written; plaintext secret export on unsupported platforms fails
+  closed.
 - Random-source failure aborts generation.
 - Construction entropy is claimed only for the implemented uniform generators.
 - Dice selection is unbiased when rolls are independent and fair.
@@ -157,11 +158,19 @@ fingerprint is not a signature, MAC, secret, or proof of provenance.
 
 ### Exports and filesystem
 
+Watch-only JSON contains no spending secret, but account xpubs, descriptors,
+addresses, roles, and fingerprints reveal financial relationships. On Unix the
+program therefore creates watch-only references with mode `0600` before writing
+bytes, using the same no-overwrite creation primitive as secret export. This is
+a privacy default, not a claim that watch-only data becomes secret key material.
+Other platforms retain their native ACL behavior for watch-only metadata.
+
 SeedQR exposes the mnemonic to any camera. Plaintext exports expose both wallets
-and may persist in SSD flash, snapshots, or backups. The program uses
-confirmation gates, `create_new`, Unix mode `0600`, synchronization, and fail-
-closed platform behavior. It cannot make later deletion reliable or defend an
-attacker-controlled parent directory.
+and may persist in SSD flash, snapshots, or backups. Plaintext secret export
+uses confirmation gates, `create_new`, Unix mode `0600`, synchronization, and
+fail-closed platform behavior. Neither path can make later deletion reliable or
+defend an attacker-controlled parent directory, a compromised filesystem, or a
+privileged local observer.
 
 ### Build and supply chain
 

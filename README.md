@@ -38,8 +38,9 @@ sponsored by Ashigaru, Sparrow Wallet, COLDCARD, or their maintainers.
   field in a watch-only reference.
 - Compares the complete account xpubs locally; it does not call a server or
   pretend to perform a global collision search.
-- Exports watch-only JSON by default, SeedQR only after confirmation, and
-  plaintext secrets only behind a separate dangerous option.
+- Exports watch-only JSON by default, creating it owner-only on Unix; SeedQR is
+  shown only after confirmation, and plaintext secrets require a separate
+  dangerous option.
 - Audits human-entered passphrases conservatively without inventing an entropy
   number.
 
@@ -215,7 +216,7 @@ them.
 ## Exports
 
 ```console
-# Public metadata: fingerprint, account xpub, descriptors, first addresses
+# Public metadata, created owner-only (0600) on Unix
 tripwire-seed create --watch-only-out wallet.tripwire-watch-only.json
 
 # Recompute the public reference fingerprint later
@@ -231,10 +232,13 @@ tripwire-seed create --dangerous-secret-out backup.tripwire-secrets.json
 After a watch-only export, the CLI prints its fingerprint so it can be retained
 separately. Watch-only files and their fingerprints contain no spending secrets,
 but they reveal address relationships and should still be handled as private
-financial metadata. Files are created with no-overwrite semantics. Plaintext
-secret export is disabled on platforms where version 0.1 cannot establish
-owner-only permissions before creation. Secure deletion is not promised: SSDs,
-snapshots, backups, and copy-on-write filesystems can retain old data.
+financial metadata. Files are created with no-overwrite semantics. On Unix,
+both watch-only JSON and plaintext secret bundles are created with mode `0600`
+before bytes are written. On other platforms, watch-only metadata uses the
+platform's normal file ACL behavior; plaintext secret export remains disabled
+where version 0.1 cannot establish owner-only permissions before creation.
+Secure deletion is not promised: SSDs, snapshots, backups, and copy-on-write
+filesystems can retain old data.
 
 See [wallet import guidance](docs/WALLET_IMPORTS.md) and the
 [version-pinned recovery drill protocol](docs/RECOVERY_DRILL.md) before moving
@@ -253,10 +257,10 @@ RUSTDOCFLAGS="-D warnings" cargo doc --no-deps --locked
 
 The test suite includes official BIP39, BIP84, and BIP380 vectors, dice rejection
 sampling, the packaged-binary public-vector self-test, deterministic release
-packaging, SeedQR encoding, redaction, no-overwrite behavior, Unix `0600` secret
-permissions, strict and bounded watch-only recovery verification, semantic
-public-field consistency checks, domain-separated fingerprint regressions, and
-the non-interactive CLI boundary.
+packaging, SeedQR encoding, redaction, no-overwrite behavior, Unix `0600`
+watch-only and secret-export permissions, strict and bounded watch-only recovery
+verification, semantic public-field consistency checks, domain-separated
+fingerprint regressions, and the non-interactive CLI boundary.
 
 Read the [cryptographic design](docs/CRYPTOGRAPHIC_DESIGN.md),
 [threat model](docs/THREAT_MODEL.md),
