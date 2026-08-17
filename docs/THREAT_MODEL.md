@@ -168,8 +168,24 @@ attacker-controlled parent directory.
 Malicious dependencies, CI actions, or compiler artifacts can steal secrets.
 The repository commits `Cargo.lock`, forbids unsafe code locally, pins workflow
 actions to commit SHAs, runs RustSec audit, cargo-deny, dependency review, and
-CodeQL, and documents source builds. These controls do not make the supply chain
-perfect or substitute for reproducible independent builds and external audit.
+CodeQL, and documents source builds.
+
+The release-candidate workflow performs two clean native builds per target on
+the same GitHub-hosted runner, requires byte-identical executables, runs the
+fixed public-vector self-test on both, creates deterministic ZIP packages and
+SHA-256 sidecars, and submits main-branch archives for GitHub SLSA provenance
+attestation. Pull-request builds retain read-only repository permissions and do
+not receive an attestation-writing token.
+
+These controls provide traceable same-runner evidence, not complete artifact
+authenticity or independent reproducibility. A compromised runner, compiler,
+linker, Python runtime, dependency, or GitHub attestation service can still
+produce and attest malicious output. Equal builds within one environment can
+repeat the same compromise. ZIP bytes can also vary across independent Python
+or zlib implementations even when the executable is identical. The remaining
+pre-release gate is reproduction on separately administered machines plus
+external review; neither CI provenance nor checksums substitute for those
+assurances.
 
 ## Severity Calibration (Critical, High, Medium, Low)
 
