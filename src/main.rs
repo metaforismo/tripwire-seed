@@ -291,10 +291,7 @@ fn self_test(arguments: &SelfTestArgs) -> Result<()> {
                 if check.passed() { "OK" } else { "FAILED" }
             );
         }
-        println!(
-            "Overall: {}",
-            if report.passed() { "OK" } else { "FAILED" }
-        );
+        println!("Overall: {}", if report.passed() { "OK" } else { "FAILED" });
     }
 
     if report.passed() {
