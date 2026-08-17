@@ -23,6 +23,9 @@ All notable changes will be documented here. The format follows
   verification against an independently retained value.
 - Non-interactive packaged-binary self-test over fixed public BIP39, BIP84,
   BIP380, dice-rejection, semantic-validation, and fingerprint vectors.
+- Native Linux, macOS, and Windows release-candidate double builds with
+  byte-for-byte executable comparison, deterministic ZIP packaging, SHA-256
+  sidecars, and main-branch SLSA provenance attestations.
 - BIP84 vectors, redaction, permissions, no-overwrite, and TTY boundary tests.
 - Security policy, threat model, cryptographic design, CI, dependency review,
   RustSec audit, cargo-deny, CodeQL, and Dependabot configuration.
