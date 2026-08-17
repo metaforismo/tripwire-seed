@@ -22,6 +22,10 @@ pub const MAX_WATCH_ONLY_BYTES: usize = 64 * 1024;
 /// Write semantically valid watch-only metadata as pretty JSON, refusing to
 /// overwrite a path.
 ///
+/// On Unix, the file is created with mode 0600 before any metadata is written.
+/// This protects financial privacy by default even though watch-only metadata
+/// contains no spending secret.
+///
 /// # Errors
 ///
 /// Returns an error when the public fields are inconsistent, serialization
@@ -30,7 +34,7 @@ pub const MAX_WATCH_ONLY_BYTES: usize = 64 * 1024;
 pub fn write_watch_only(path: &Path, summary: &TripwireSummary) -> Result<()> {
     validate_tripwire_summary(summary)?;
     let encoded = serde_json::to_vec_pretty(summary)?;
-    let mut file = create_new_file(path, false)?;
+    let mut file = create_new_file(path, true)?;
     file.write_all(&encoded)?;
     file.write_all(b"\n")?;
     file.sync_all()?;
@@ -162,7 +166,7 @@ fn push_decimal_digit(output: &mut String, digit: usize) {
     output.push(char::from(b'0' + digit.to_le_bytes()[0]));
 }
 
-fn create_new_file(path: &Path, secret: bool) -> Result<std::fs::File> {
+fn create_new_file(path: &Path, owner_only: bool) -> Result<std::fs::File> {
     if path.exists() {
         return Err(Error::OutputExists(path.to_path_buf()));
     }
@@ -171,13 +175,13 @@ fn create_new_file(path: &Path, secret: bool) -> Result<std::fs::File> {
     options.write(true).create_new(true);
 
     #[cfg(unix)]
-    if secret {
+    if owner_only {
         use std::os::unix::fs::OpenOptionsExt;
         options.mode(0o600);
     }
 
     #[cfg(not(unix))]
-    let _ = secret;
+    let _ = owner_only;
 
     options.open(path).map_err(Error::from)
 }
@@ -249,6 +253,24 @@ mod tests {
                 checksum
             );
         }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn watch_only_export_is_owner_only() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let directory = tempfile::tempdir()
+            .unwrap_or_else(|error| unreachable!("temporary directory: {error}"));
+        let output = directory.path().join("watch-only.json");
+        write_watch_only(&output, &summary())
+            .unwrap_or_else(|error| unreachable!("write succeeds: {error}"));
+        let mode = fs::metadata(&output)
+            .unwrap_or_else(|error| unreachable!("metadata succeeds: {error}"))
+            .permissions()
+            .mode()
+            & 0o777;
+        assert_eq!(mode, 0o600);
     }
 
     #[test]
