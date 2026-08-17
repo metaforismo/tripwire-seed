@@ -17,6 +17,12 @@ different target directories with incremental compilation disabled and
 `SOURCE_DATE_EPOCH` set to the checked-out commit time. The two executables must
 be byte-for-byte identical.
 
+For the Windows MSVC candidate only, the script appends
+`-Clink-arg=/Brepro` to any existing `RUSTFLAGS`. This asks the native linker to
+use its binary-reproducibility mode without changing normal development builds
+or the other targets. The raw executable comparison remains authoritative; the
+flag is also recorded in `BUILD-METADATA.json`.
+
 Both executables then run:
 
 ```console
@@ -68,9 +74,10 @@ tripwire-seed-v<version>-<target>/
 ```
 
 The metadata records the package version, exact Git commit, target triple,
-commit-derived timestamp, toolchain versions, executable SHA-256, self-test
-schema, and successful double-build comparison. It intentionally contains no
-runner path, username, hostname, secret, or wallet-derived value.
+commit-derived timestamp, toolchain versions, executable SHA-256, applied
+candidate linker reproducibility flags, self-test schema, and successful
+double-build comparison. It intentionally contains no runner path, username,
+hostname, secret, or wallet-derived value.
 
 Artifacts uploaded by CI expire after 14 days and are release candidates only.
 Do not redistribute them as an official release.
@@ -88,7 +95,7 @@ python3 scripts/reproducible_release.py \
 
 On Apple Silicon use `aarch64-apple-darwin`. On 64-bit Windows use
 `x86_64-pc-windows-msvc` and invoke the script with `python` if that is the local
-launcher name.
+launcher name. The script applies the candidate-only MSVC linker flag itself.
 
 The command exits unsuccessfully if the two binaries differ, either self-test
 fails, the reports disagree, a required package document is missing, or the
