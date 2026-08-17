@@ -13,6 +13,8 @@ All notable changes will be documented here. The format follows
 - CSPRNG and unbiased physical-dice passphrase generation.
 - Conservative passphrase audit and exact account-xpub comparison.
 - Watch-only JSON, opt-in SeedQR, and gated Unix plaintext export.
+- Owner-only Unix creation for watch-only JSON so public wallet metadata does
+  not default to group/world-readable filesystem permissions.
 - BIP380 checksums on receive and change descriptors in terminal and watch-only
   JSON output.
 - Strict, bounded watch-only reference loading and exact offline recovery
