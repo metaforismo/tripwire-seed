@@ -1,0 +1,24 @@
+[package]
+name = "tripwire-seed-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+license = "MIT OR Apache-2.0"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "=0.4.13"
+serde_json = "=1.0.151"
+tripwire-seed = { path = "..", version = "0.1.0" }
+
+[[bin]]
+name = "public_surfaces"
+path = "fuzz_targets/public_surfaces.rs"
+test = false
+doc = false
+bench = false
+
+[workspace]
+members = ["."]
