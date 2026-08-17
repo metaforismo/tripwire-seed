@@ -1,0 +1,36 @@
+name: Reproduction verifier
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: reproduction-verifier-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Test verifier on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            python: python3
+          - os: macos-latest
+            python: python3
+          - os: windows-latest
+            python: python
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run standard-library verifier tests
+        run: ${{ matrix.python }} scripts/test_verify_independent_reproduction.py
