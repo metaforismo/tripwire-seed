@@ -4,6 +4,9 @@
 
 - Independent review of entropy sampling and BIP39/BIP84 derivation.
 - Reproduce builds on Linux, macOS, and Windows.
+- Run the deterministic public-vector self-test on every release candidate; this
+  checks packaged implementation behavior but does not authenticate an artifact
+  or replace reproducibility and independent review.
 - Verify manual recovery with current Sparrow, COLDCARD, and Ashigaru releases
   using unfunded signet/testnet material; exact-match each drill against a prior
   watch-only export and an independently retained fingerprint with
