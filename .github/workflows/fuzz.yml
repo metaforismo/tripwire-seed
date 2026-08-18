@@ -42,6 +42,14 @@ jobs:
       - name: Install pinned cargo-fuzz
         run: cargo install cargo-fuzz --version 0.13.2 --locked
 
+      - name: Verify committed fuzz lockfile
+        run: >-
+          cargo +nightly-2026-08-12 metadata
+          --manifest-path fuzz/Cargo.toml
+          --locked
+          --format-version 1
+          >/dev/null
+
       - name: Fuzz public surfaces
         run: >-
           cargo +nightly-2026-08-12 fuzz run public_surfaces
@@ -50,11 +58,5 @@ jobs:
           -timeout=5
           -max_len=65536
 
-      - name: Upload generated fuzz lock for review
-        if: github.event_name == 'pull_request'
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: fuzz-cargo-lock
-          path: fuzz/Cargo.lock
-          if-no-files-found: error
-          retention-days: 1
+      - name: Require stable fuzz lockfile
+        run: git diff --exit-code -- fuzz/Cargo.lock
