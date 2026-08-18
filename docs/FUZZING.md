@@ -55,7 +55,10 @@ lockfile. After the campaign, CI requires `fuzz/Cargo.lock` to remain byte-for-
 byte unchanged in the worktree. This makes an accidental dependency re-resolution
 a failing gate instead of an implicit runner-side update.
 
-The fuzz workspace is included in Dependabot and `cargo-deny` checks. It is not
+The fuzz workspace is included in Dependabot and `cargo-deny` checks. The
+`libfuzzer-sys` package declares `(MIT OR Apache-2.0) AND NCSA`; `deny.toml`
+therefore permits `NCSA` only for the exact `libfuzzer-sys@0.4.13` package rather
+than adding NCSA to the repository-wide allow list. The fuzz workspace is not
 part of the shipped binary and does not change the application's dependency
 graph.
 
