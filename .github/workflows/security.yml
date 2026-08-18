@@ -7,6 +7,7 @@ on:
       - Cargo.toml
       - Cargo.lock
       - fuzz/Cargo.toml
+      - fuzz/Cargo.lock
       - deny.toml
       - .github/workflows/security.yml
   # `audit` is a required branch-protection check, so every PR must create it.
