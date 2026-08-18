@@ -46,8 +46,14 @@ weekly campaign receives a longer time budget.
 The workflow pins:
 
 - a dated Rust nightly toolchain;
-- an exact `cargo-fuzz` version; and
-- exact direct versions for the fuzz-only dependencies.
+- an exact `cargo-fuzz` version;
+- exact direct versions for the fuzz-only dependencies; and
+- a committed `fuzz/Cargo.lock` for the complete fuzz dependency graph.
+
+Before fuzzing, `cargo metadata --locked` must accept the committed fuzz
+lockfile. After the campaign, CI requires `fuzz/Cargo.lock` to remain byte-for-
+byte unchanged in the worktree. This makes an accidental dependency re-resolution
+a failing gate instead of an implicit runner-side update.
 
 The fuzz workspace is included in Dependabot and `cargo-deny` checks. It is not
 part of the shipped binary and does not change the application's dependency
@@ -55,12 +61,19 @@ graph.
 
 ## Run locally
 
-Install the same nightly and pinned `cargo-fuzz`, then run:
+Install the same nightly and pinned `cargo-fuzz`, verify the lockfile, then run:
 
 ```console
+cargo +nightly-2026-08-12 metadata \
+  --manifest-path fuzz/Cargo.toml \
+  --locked \
+  --format-version 1 >/dev/null
+
 cargo +nightly-2026-08-12 fuzz run public_surfaces \
   fuzz/corpus/public_surfaces \
   -- -max_total_time=30 -timeout=5 -max_len=65536
+
+git diff --exit-code -- fuzz/Cargo.lock
 ```
 
 Fuzz artifacts and crashes may contain mutated public metadata. They must still
