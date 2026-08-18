@@ -18,8 +18,9 @@ fuzz_target!(|data: &[u8]| {
     };
 
     let validation = validate_tripwire_summary(&summary);
-    let Ok(fingerprint) = watch_only_fingerprint(&summary) else {
-        return;
+    let fingerprint = match watch_only_fingerprint(&summary) {
+        Ok(fingerprint) => fingerprint,
+        Err(error) => panic!("decoded public summary failed to fingerprint: {error}"),
     };
 
     assert_eq!(fingerprint.len(), 64);
