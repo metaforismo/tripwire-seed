@@ -1,0 +1,27 @@
+{
+  "schema": "tripwire-seed/watch-only/v1",
+  "network": "bitcoin",
+  "account_standard": "BIP39 + BIP32 + BIP84 native SegWit (account 0)",
+  "decoy": {
+    "role": "decoy",
+    "master_fingerprint": "73c5da0a",
+    "account_derivation": "m/84'/0'/0'",
+    "account_xpub": "xpub6CatWdiZiodmUeTDp8LT5or8nmbKNcuyvz7WyksVFkKB4RHwCD3XyuvPEbvqAQY3rAPshWcMLoP2fMFMKHPJ4ZeZXYVUhLv1VMrjPC7PW6V",
+    "receive_descriptor": "wpkh([73c5da0a/84h/0h/0h]xpub6CatWdiZiodmUeTDp8LT5or8nmbKNcuyvz7WyksVFkKB4RHwCD3XyuvPEbvqAQY3rAPshWcMLoP2fMFMKHPJ4ZeZXYVUhLv1VMrjPC7PW6V/0/*)#afwvtk2s",
+    "change_descriptor": "wpkh([73c5da0a/84h/0h/0h]xpub6CatWdiZiodmUeTDp8LT5or8nmbKNcuyvz7WyksVFkKB4RHwCD3XyuvPEbvqAQY3rAPshWcMLoP2fMFMKHPJ4ZeZXYVUhLv1VMrjPC7PW6V/1/*)#vatdkr6g",
+    "first_receive_address": "bc1qcr8te4kr609gcawutmrza0j4xv80jy8z306fyu"
+  },
+  "protected": {
+    "role": "protected",
+    "master_fingerprint": "73c5da0a",
+    "account_derivation": "m/84'/0'/0'",
+    "account_xpub": "xpub6CatWdiZiodmUeTDp8LT5or8nmbKNcuyvz7WyksVFkKB4RHwCD3XyuvPEbvqAQY3rAPshWcMLoP2fMFMKHPJ4ZeZXYVUhLv1VMrjPC7PW6V",
+    "receive_descriptor": "wpkh([73c5da0a/84h/0h/0h]xpub6CatWdiZiodmUeTDp8LT5or8nmbKNcuyvz7WyksVFkKB4RHwCD3XyuvPEbvqAQY3rAPshWcMLoP2fMFMKHPJ4ZeZXYVUhLv1VMrjPC7PW6V/0/*)#afwvtk2s",
+    "change_descriptor": "wpkh([73c5da0a/84h/0h/0h]xpub6CatWdiZiodmUeTDp8LT5or8nmbKNcuyvz7WyksVFkKB4RHwCD3XyuvPEbvqAQY3rAPshWcMLoP2fMFMKHPJ4ZeZXYVUhLv1VMrjPC7PW6V/1/*)#vatdkr6g",
+    "first_receive_address": "bc1qcr8te4kr609gcawutmrza0j4xv80jy8z306fyu"
+  },
+  "collision_check": {
+    "same_account_xpub": true,
+    "scope": "Exact equality of the two locally derived BIP84 account xpubs; not a global collision search."
+  }
+}

@@ -6,6 +6,8 @@ on:
     paths:
       - Cargo.toml
       - Cargo.lock
+      - fuzz/Cargo.toml
+      - fuzz/Cargo.lock
       - deny.toml
       - .github/workflows/security.yml
   # `audit` is a required branch-protection check, so every PR must create it.
@@ -34,5 +36,7 @@ jobs:
         run: cargo audit --deny warnings
       - name: Install cargo-deny
         run: cargo install cargo-deny --version 0.20.2 --locked
-      - name: Check licenses, bans, advisories, and sources
+      - name: Check main crate licenses, bans, advisories, and sources
         run: cargo deny check
+      - name: Check fuzz crate licenses, bans, advisories, and sources
+        run: cargo deny --manifest-path fuzz/Cargo.toml check

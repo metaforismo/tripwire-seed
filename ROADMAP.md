@@ -8,12 +8,17 @@
   runner.
 - Main-branch candidate archives receive SHA-256 sidecars and GitHub SLSA
   provenance attestations.
+- Coverage-guided fuzzing exercises BIP380 descriptor handling, strict watch-only
+  decoding, semantic validation, and fingerprint invariants using public data
+  only; see [the fuzzing boundary](docs/FUZZING.md).
 - CI covers formatting, Clippy, Rust tests, rustdoc, MSRV, macOS and Windows,
-  RustSec, cargo-deny, dependency review, and CodeQL.
+  RustSec, cargo-deny for the application and fuzz workspace, dependency review,
+  and CodeQL.
 
 These controls are evidence, not a stable-release decision. Same-runner equality
 does not replace independent reproduction, the self-test does not authenticate a
-binary, and CI does not replace external review or real recovery drills.
+binary, fuzzing does not prove parser correctness, and CI does not replace
+external review or real recovery drills.
 
 ## Before 0.1.0
 

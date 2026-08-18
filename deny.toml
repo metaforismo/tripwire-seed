@@ -16,6 +16,11 @@ allow = [
   "Unicode-3.0",
   "Zlib",
 ]
+exceptions = [
+  # libFuzzer's upstream LLVM/NCSA terms are fuzz-tooling only. Keep NCSA scoped
+  # to this exact crate/version rather than allowing it across the dependency graph.
+  { crate = "libfuzzer-sys@0.4.13", allow = ["NCSA"] },
+]
 
 [bans]
 multiple-versions = "warn"
