@@ -40,7 +40,7 @@ jobs:
           toolchain: nightly-2026-08-12
 
       - name: Install pinned cargo-fuzz
-        run: cargo install cargo-fuzz --version 0.13.2 --locked
+        run: cargo install cargo-fuzz --version '=0.13.2' --locked
 
       - name: Verify committed fuzz lockfile
         run: >-
